@@ -1,0 +1,1055 @@
+<div class="space-y-6">
+    <!-- Header & Action Ribbon -->
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white p-6 rounded-xl border border-slate-200 shadow-xs">
+        <div>
+            <div class="flex items-center gap-2.5">
+                <h1 class="text-2xl font-bold text-brand tracking-tight">Budget & Funding Management</h1>
+                <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-brand border border-emerald-200">
+                    Live Ledger & Registry
+                </span>
+            </div>
+            <p class="text-xs text-slate-500 mt-1">Unified fiscal tracking, 1:1 funding allocation, household-audited candidate enrollment, and immutable ledger governance.</p>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex flex-wrap items-center gap-2.5">
+            <button 
+                wire:click="openDonationModal"
+                class="px-3.5 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-xs font-bold text-neutral-strong border border-slate-200 transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs"
+            >
+                <svg class="w-4 h-4 text-brand" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                <span>Record Donation</span>
+            </button>
+            <button 
+                wire:click="openProjectModal"
+                class="px-4 py-2 rounded-lg bg-accent hover:bg-amber-400 text-xs font-bold text-neutral-strong transition-colors shadow-xs flex items-center gap-1.5 cursor-pointer uppercase tracking-wide"
+            >
+                <svg class="w-4 h-4 text-neutral-strong" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+                <span>Create Ayuda Project</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Navigation Sub-Tabs -->
+    <div class="flex border-b border-slate-200 gap-6 text-sm font-semibold">
+        <button 
+            wire:click="$set('activeTab', 'overview')"
+            class="pb-3 flex items-center gap-2 transition-colors cursor-pointer border-b-2 {{ $activeTab === 'overview' ? 'border-brand text-brand font-bold' : 'border-transparent text-slate-500 hover:text-neutral-strong' }}"
+        >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+            <span>Financial Overview</span>
+        </button>
+
+        <button 
+            wire:click="$set('activeTab', 'registry')"
+            class="pb-3 flex items-center gap-2 transition-colors cursor-pointer border-b-2 {{ $activeTab === 'registry' ? 'border-brand text-brand font-bold' : 'border-transparent text-slate-500 hover:text-neutral-strong' }}"
+        >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+            <span>Unified Project & Funding Registry</span>
+        </button>
+
+        <button 
+            wire:click="$set('activeTab', 'ledger')"
+            class="pb-3 flex items-center gap-2 transition-colors cursor-pointer border-b-2 {{ $activeTab === 'ledger' ? 'border-brand text-brand font-bold' : 'border-transparent text-slate-500 hover:text-neutral-strong' }}"
+        >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            <span>Immutable Ledger</span>
+        </button>
+
+        <button 
+            wire:click="$set('activeTab', 'ggms_sync')"
+            class="pb-3 flex items-center gap-2 transition-colors cursor-pointer border-b-2 {{ $activeTab === 'ggms_sync' ? 'border-brand text-brand font-bold' : 'border-transparent text-slate-500 hover:text-neutral-strong' }}"
+        >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+            <span>Government GGMS Mirror</span>
+        </button>
+    </div>
+
+    <!-- TAB 1: OVERVIEW & ACTIVE PROJECTS -->
+    @if($activeTab === 'overview')
+        <!-- Financial KPI Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="bg-surface border border-slate-200 rounded-xl p-5 shadow-xs">
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Total Municipal Ayuda Pool</span>
+                <h3 class="text-2xl font-black text-neutral-strong tracking-tight font-mono mt-2">₱{{ number_format($totalAllocated, 2) }}</h3>
+                <p class="text-xs text-slate-500 mt-1">Disbursed: <span class="font-mono font-bold text-brand">₱{{ number_format($totalDisbursed, 2) }}</span></p>
+            </div>
+            <div class="bg-surface border border-slate-200 rounded-xl p-5 shadow-xs">
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Government (GGMS) Available</span>
+                <h3 class="text-2xl font-black text-neutral-strong tracking-tight font-mono mt-2">₱{{ number_format($govBalance, 2) }}</h3>
+                <p class="text-xs text-slate-500 mt-1">Total grant: <span class="font-mono font-bold text-slate-700">₱{{ number_format($govAllocated, 2) }}</span></p>
+            </div>
+            <div class="bg-surface border border-slate-200 rounded-xl p-5 shadow-xs">
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Private Donations Available</span>
+                <h3 class="text-2xl font-black text-neutral-strong tracking-tight font-mono mt-2">₱{{ number_format($privateBalance, 2) }}</h3>
+                <p class="text-xs text-slate-500 mt-1">Total received: <span class="font-mono font-bold text-slate-700">₱{{ number_format($privateAllocated, 2) }}</span></p>
+            </div>
+            <div class="bg-surface border border-slate-200 rounded-xl p-5 shadow-xs">
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Active Operational Projects</span>
+                <h3 class="text-2xl font-black text-brand tracking-tight font-mono mt-2">{{ $programs->where('status', App\Enums\ProgramStatus::Active)->count() }}</h3>
+                <p class="text-xs text-slate-500 mt-1"><span class="font-bold text-neutral-strong">{{ $programs->count() }}</span> total projects on record</p>
+            </div>
+        </div>
+
+        <!-- Funding Sources Master List -->
+        <div class="bg-surface border border-slate-200 rounded-xl p-6 shadow-xs">
+            <h3 class="text-base font-bold text-neutral-strong tracking-tight mb-4">Funding Sources & Allocations</h3>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs">
+                    <thead class="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider border-y border-slate-100">
+                        <tr>
+                            <th class="px-4 py-3 rounded-l-lg">Source Code</th>
+                            <th class="px-4 py-3">Title & Envelopes</th>
+                            <th class="px-4 py-3">Type</th>
+                            <th class="px-4 py-3 text-right">Allocated</th>
+                            <th class="px-4 py-3 text-right">Disbursed</th>
+                            <th class="px-4 py-3 text-right">Available Balance</th>
+                            <th class="px-4 py-3 text-center rounded-r-lg">Projects Linked</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        @foreach($fundingSources as $source)
+                            <tr class="hover:bg-slate-50 transition-colors">
+                                <td class="px-4 py-3.5 font-mono font-bold text-brand">{{ $source->source_code }}</td>
+                                <td class="px-4 py-3.5">
+                                    <p class="font-bold text-neutral-strong">{{ $source->title }}</p>
+                                    <p class="text-[11px] text-slate-500">{{ $source->office }} • FY {{ $source->fiscal_year }}</p>
+                                </td>
+                                <td class="px-4 py-3.5">
+                                    <span class="px-2 py-0.5 rounded text-[10px] font-bold {{ $source->funding_type->value === 'Government' ? 'bg-emerald-50 text-brand border border-emerald-200' : 'bg-amber-50 text-warning border border-amber-200' }}">
+                                        {{ $source->funding_type->value }}
+                                    </span>
+                                </td>
+                                <td class="px-4 py-3.5 text-right font-mono font-bold text-neutral-strong">₱{{ number_format($source->allocated_amount, 2) }}</td>
+                                <td class="px-4 py-3.5 text-right font-mono text-slate-600">₱{{ number_format($source->spent_amount, 2) }}</td>
+                                <td class="px-4 py-3.5 text-right font-mono font-bold text-brand">₱{{ number_format($source->remaining_balance, 2) }}</td>
+                                <td class="px-4 py-3.5 text-center font-mono font-bold text-slate-700">{{ $source->ayuda_programs_count }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Operational Ayuda Projects List -->
+        <div class="bg-surface border border-slate-200 rounded-xl p-6 shadow-xs">
+            <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
+                <div>
+                    <h3 class="text-base font-bold text-neutral-strong tracking-tight">Ayuda Projects (Operational Distributions)</h3>
+                    <p class="text-xs text-slate-500 mt-0.5">Projects created in Budget and disbursed via POS Scanner</p>
+                </div>
+                <button wire:click="openProjectModal" class="text-xs text-brand hover:underline font-bold cursor-pointer">
+                    + New Project
+                </button>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs">
+                    <thead class="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider border-y border-slate-100">
+                        <tr>
+                            <th class="px-4 py-3 rounded-l-lg">Project Code</th>
+                            <th class="px-4 py-3">Title & Benefit</th>
+                            <th class="px-4 py-3">Linked Fund</th>
+                            <th class="px-4 py-3 text-right">Budget Cap</th>
+                            <th class="px-4 py-3 text-right">Disbursed</th>
+                            <th class="px-4 py-3 text-right">Unspent Earmark</th>
+                            <th class="px-4 py-3 text-center">Status</th>
+                            <th class="px-4 py-3 text-center rounded-r-lg">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        @foreach($programs as $program)
+                            <tr class="hover:bg-slate-50 transition-colors">
+                                <td class="px-4 py-3.5 font-mono font-bold text-brand">{{ $program->program_code }}</td>
+                                <td class="px-4 py-3.5">
+                                    <p class="font-bold text-neutral-strong">{{ $program->title }}</p>
+                                    <p class="text-[11px] text-slate-500">
+                                        {{ $program->benefit_type->value }} (₱{{ number_format($program->unit_amount, 2) }}) • Target: {{ $program->target_beneficiaries }}
+                                    </p>
+                                </td>
+                                <td class="px-4 py-3.5 font-mono text-slate-600">{{ $program->fundingSource?->source_code }}</td>
+                                <td class="px-4 py-3.5 text-right font-mono font-bold text-neutral-strong">₱{{ number_format($program->budget_cap, 2) }}</td>
+                                <td class="px-4 py-3.5 text-right font-mono text-brand">₱{{ number_format($program->disbursed_amount, 2) }}</td>
+                                <td class="px-4 py-3.5 text-right font-mono font-bold text-slate-700">₱{{ number_format($program->remaining_balance, 2) }}</td>
+                                <td class="px-4 py-3.5 text-center">
+                                    <span class="px-2 py-0.5 rounded text-[10px] font-bold {{ $program->status->value === 'Active' ? 'bg-emerald-50 text-brand border border-emerald-200' : 'bg-slate-100 text-slate-600' }}">
+                                        {{ $program->status->value }}
+                                    </span>
+                                </td>
+                                <td class="px-4 py-3.5 text-center">
+                                    @if($program->status->value === 'Active' && $program->remaining_balance > 0)
+                                        <button 
+                                            wire:click="confirmReallocation({{ $program->id }})"
+                                            class="px-2.5 py-1 rounded bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 text-[11px] font-bold cursor-pointer transition-colors"
+                                        >
+                                            Reallocate
+                                        </button>
+                                    @else
+                                        <span class="text-slate-400 font-mono text-[11px]">-</span>
+                                    @endif
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    @endif
+
+    <!-- TAB 2: UNIFIED PROJECT & FUNDING REGISTRY -->
+    @if($activeTab === 'registry')
+        <div class="bg-surface border border-slate-200 rounded-xl p-6 shadow-xs space-y-5">
+            <!-- Header & Search -->
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+                <div>
+                    <h3 class="text-base font-bold text-neutral-strong tracking-tight">Unified Project & Funding Registry</h3>
+                    <p class="text-xs text-slate-500 mt-0.5">Centralized read-only browser covering all government allocations, GGMS sub-projects, private donations, and local distribution programs.</p>
+                </div>
+
+                <div class="w-full sm:w-72">
+                    <input 
+                        type="text" 
+                        wire:model.live.debounce.250ms="registrySearch" 
+                        placeholder="Search code, title, donor..." 
+                        class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs text-neutral-strong focus:ring-1 focus:ring-brand"
+                    >
+                </div>
+            </div>
+
+            <!-- Segmented Category Filter Bar -->
+            <div class="flex flex-wrap items-center gap-1.5 p-1 bg-slate-100 rounded-lg max-w-fit text-xs font-bold">
+                <button 
+                    wire:click="$set('registryCategory', 'ALL')"
+                    class="px-3 py-1.5 rounded-md transition-all cursor-pointer {{ $registryCategory === 'ALL' ? 'bg-white text-brand shadow-xs' : 'text-slate-600 hover:text-neutral-strong' }}"
+                >
+                    All Categories ({{ $registryItems->count() }})
+                </button>
+                <button 
+                    wire:click="$set('registryCategory', 'GOV_FUND')"
+                    class="px-3 py-1.5 rounded-md transition-all cursor-pointer {{ $registryCategory === 'GOV_FUND' ? 'bg-white text-brand shadow-xs' : 'text-slate-600 hover:text-neutral-strong' }}"
+                >
+                    Government Funds
+                </button>
+                <button 
+                    wire:click="$set('registryCategory', 'GGMS_PROJECT')"
+                    class="px-3 py-1.5 rounded-md transition-all cursor-pointer {{ $registryCategory === 'GGMS_PROJECT' ? 'bg-white text-brand shadow-xs' : 'text-slate-600 hover:text-neutral-strong' }}"
+                >
+                    GGMS Projects
+                </button>
+                <button 
+                    wire:click="$set('registryCategory', 'PRIVATE_DONATION')"
+                    class="px-3 py-1.5 rounded-md transition-all cursor-pointer {{ $registryCategory === 'PRIVATE_DONATION' ? 'bg-white text-brand shadow-xs' : 'text-slate-600 hover:text-neutral-strong' }}"
+                >
+                    Private Donations
+                </button>
+                <button 
+                    wire:click="$set('registryCategory', 'DISTRIBUTION_PROJECT')"
+                    class="px-3 py-1.5 rounded-md transition-all cursor-pointer {{ $registryCategory === 'DISTRIBUTION_PROJECT' ? 'bg-white text-brand shadow-xs' : 'text-slate-600 hover:text-neutral-strong' }}"
+                >
+                    Distribution Projects
+                </button>
+            </div>
+
+            <!-- Unified Data Table -->
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs">
+                    <thead class="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider border-y border-slate-100">
+                        <tr>
+                            <th class="px-4 py-3 rounded-l-lg">Category</th>
+                            <th class="px-4 py-3">Code / Ref</th>
+                            <th class="px-4 py-3">Title & Particulars</th>
+                            <th class="px-4 py-3 text-right">Allocated / Cap</th>
+                            <th class="px-4 py-3 text-right">Disbursed / Spent</th>
+                            <th class="px-4 py-3 text-right">Available Balance</th>
+                            <th class="px-4 py-3 text-center">Status</th>
+                            <th class="px-4 py-3 text-right rounded-r-lg">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        @forelse($registryItems as $item)
+                            <tr 
+                                wire:click="openRegistryInspector('{{ $item['category'] }}', '{{ $item['id'] }}')"
+                                class="hover:bg-slate-50/80 transition-colors cursor-pointer group"
+                            >
+                                <td class="px-4 py-3.5">
+                                    @php
+                                        $catColor = match($item['category']) {
+                                            'Government Fund' => 'bg-emerald-50 text-brand border-emerald-200',
+                                            'GGMS Project' => 'bg-blue-50 text-blue-700 border-blue-200',
+                                            'Private Donation' => 'bg-amber-50 text-amber-800 border-amber-200',
+                                            'Distribution Project' => 'bg-indigo-50 text-indigo-700 border-indigo-200',
+                                            default => 'bg-slate-100 text-slate-700 border-slate-200',
+                                        };
+                                    @endphp
+                                    <span class="px-2 py-0.5 rounded text-[10px] font-bold border {{ $catColor }}">
+                                        {{ $item['category'] }}
+                                    </span>
+                                </td>
+                                <td class="px-4 py-3.5 font-mono font-bold text-brand group-hover:underline">
+                                    {{ $item['code'] }}
+                                </td>
+                                <td class="px-4 py-3.5">
+                                    <p class="font-bold text-neutral-strong">{{ $item['title'] }}</p>
+                                    <p class="text-[11px] text-slate-500">{{ $item['detail_summary'] }}</p>
+                                </td>
+                                <td class="px-4 py-3.5 text-right font-mono font-bold text-neutral-strong">
+                                    ₱{{ number_format($item['allocated'], 2) }}
+                                </td>
+                                <td class="px-4 py-3.5 text-right font-mono text-slate-600">
+                                    ₱{{ number_format($item['spent'], 2) }}
+                                </td>
+                                <td class="px-4 py-3.5 text-right font-mono font-bold text-brand">
+                                    ₱{{ number_format($item['balance'], 2) }}
+                                </td>
+                                <td class="px-4 py-3.5 text-center">
+                                    <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-700">
+                                        {{ $item['status'] }}
+                                    </span>
+                                </td>
+                                <td class="px-4 py-3.5 text-right">
+                                    <button class="text-xs text-brand font-bold group-hover:underline flex items-center justify-end gap-1 ml-auto">
+                                        <span>Inspect</span>
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                                    </button>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="8" class="px-4 py-12 text-center text-slate-400 font-medium">
+                                    No records matching filter criteria in unified registry.
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    @endif
+
+    <!-- TAB 3: IMMUTABLE LEDGER -->
+    @if($activeTab === 'ledger')
+        <div class="bg-surface border border-slate-200 rounded-xl p-6 shadow-xs space-y-4">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-3 border-b border-slate-100">
+                <div>
+                    <h3 class="text-base font-bold text-neutral-strong tracking-tight">Immutable Audit Ledger Stream</h3>
+                    <p class="text-xs text-slate-500 mt-0.5">Double-entry audit log of all initial allocations, donations, earmarks, releases, and reallocations.</p>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-2">
+                    <input 
+                        type="text" 
+                        wire:model.live.debounce.250ms="ledgerSearch" 
+                        placeholder="Search ref, notes..." 
+                        class="bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-xs text-neutral-strong"
+                    >
+                    <select wire:model.live="ledgerFilterType" class="bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-xs text-neutral-strong">
+                        <option value="ALL">All Event Types</option>
+                        <option value="ALLOCATION">Allocation</option>
+                        <option value="DONATION">Donation</option>
+                        <option value="EARMARK">Earmark</option>
+                        <option value="RELEASE">Release</option>
+                        <option value="REALLOCATION">Reallocation</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs">
+                    <thead class="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider border-y border-slate-100">
+                        <tr>
+                            <th class="px-4 py-3 rounded-l-lg">Reference Code</th>
+                            <th class="px-4 py-3">Event Type</th>
+                            <th class="px-4 py-3">Source / Project</th>
+                            <th class="px-4 py-3 text-right">Amount (₱)</th>
+                            <th class="px-4 py-3 text-right">New Balance (₱)</th>
+                            <th class="px-4 py-3">Logged By</th>
+                            <th class="px-4 py-3 text-right rounded-r-lg">Timestamp</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        @forelse($ledgerEntries as $entry)
+                            <tr class="hover:bg-slate-50 transition-colors">
+                                <td class="px-4 py-3.5 font-mono font-bold text-brand">{{ $entry->reference_code }}</td>
+                                <td class="px-4 py-3.5">
+                                    <span class="px-2 py-0.5 rounded text-[10px] font-bold 
+                                        @if($entry->entry_type->value === 'ALLOCATION') bg-emerald-50 text-brand border border-emerald-200
+                                        @elseif($entry->entry_type->value === 'DONATION') bg-amber-50 text-warning border border-amber-200
+                                        @elseif($entry->entry_type->value === 'RELEASE') bg-rose-50 text-rose-700 border border-rose-200
+                                        @elseif($entry->entry_type->value === 'REALLOCATION') bg-purple-50 text-purple-700 border border-purple-200
+                                        @else bg-slate-100 text-slate-700 border border-slate-200 @endif
+                                    ">
+                                        {{ $entry->entry_type->value }}
+                                    </span>
+                                </td>
+                                <td class="px-4 py-3.5">
+                                    <p class="font-bold text-neutral-strong">{{ $entry->fundingSource?->source_code }}</p>
+                                    <p class="text-[11px] text-slate-500">{{ $entry->ayudaProgram?->program_code ?: $entry->notes }}</p>
+                                </td>
+                                <td class="px-4 py-3.5 text-right font-mono font-bold text-neutral-strong">
+                                    ₱{{ number_format($entry->amount, 2) }}
+                                </td>
+                                <td class="px-4 py-3.5 text-right font-mono font-bold text-brand">
+                                    ₱{{ number_format($entry->balance_after, 2) }}
+                                </td>
+                                <td class="px-4 py-3.5 text-slate-600">{{ $entry->creator?->name ?: 'System Audit' }}</td>
+                                <td class="px-4 py-3.5 text-right font-mono text-slate-500 text-[11px]">
+                                    {{ $entry->created_at->format('M d, Y h:i A') }}
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="7" class="px-4 py-12 text-center text-slate-400 font-medium">
+                                    No ledger audit records found.
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="pt-2">
+                {{ $ledgerEntries->links() }}
+            </div>
+        </div>
+    @endif
+
+    <!-- TAB 4: GGMS MIRROR -->
+    @if($activeTab === 'ggms_sync')
+        <div class="bg-surface border border-slate-200 rounded-xl p-6 shadow-xs space-y-4">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                <div>
+                    <h3 class="text-base font-bold text-neutral-strong tracking-tight">Government GGMS Mirrored Allocations</h3>
+                    <p class="text-xs text-slate-500 mt-0.5">Synchronized from central GGMS database (`u518908950_ggms` / `OFF-2026-0006`).</p>
+                </div>
+                <button 
+                    wire:click="syncGgms"
+                    class="px-3 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-brand border border-emerald-200 text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5"
+                >
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                    <span>Sync Grants Now</span>
+                </button>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                @foreach($ggmsCaches as $cache)
+                    <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-2">
+                        <div class="flex items-center justify-between">
+                            <span class="font-mono font-bold text-xs text-brand">{{ $cache->project_code }}</span>
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-brand">
+                                {{ $cache->status }}
+                            </span>
+                        </div>
+                        <h4 class="text-xs font-bold text-neutral-strong">{{ $cache->title }}</h4>
+                        <div class="pt-2 border-t border-slate-200 flex justify-between text-xs font-mono">
+                            <span class="text-slate-500">Allocated:</span>
+                            <span class="font-bold text-neutral-strong">₱{{ number_format($cache->allocated_budget, 2) }}</span>
+                        </div>
+                        <div class="flex justify-between text-xs font-mono">
+                            <span class="text-slate-500">Disbursed:</span>
+                            <span class="text-brand">₱{{ number_format($cache->spent_budget, 2) }}</span>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+    @endif
+
+    <!-- SLIDE-OVER DETAIL INSPECTOR DRAWER (FOR UNIFIED REGISTRY) -->
+    @if($showRegistryInspector && $inspectingRecord)
+        <div class="fixed inset-0 z-50 overflow-hidden" aria-labelledby="slide-over-title" role="dialog" aria-modal="true">
+            <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-xs transition-opacity" wire:click="closeRegistryInspector"></div>
+
+            <div class="fixed inset-y-0 right-0 pl-10 max-w-full flex">
+                <div class="w-screen max-w-md bg-white border-l border-slate-200 shadow-2xl p-6 space-y-6 flex flex-col justify-between overflow-y-auto">
+                    <div class="space-y-5">
+                        <!-- Drawer Top Header -->
+                        <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+                            <div>
+                                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-brand border border-emerald-200">
+                                    {{ $inspectingRecord['category'] }}
+                                </span>
+                                <h3 class="text-lg font-bold text-neutral-strong mt-1.5 font-mono">{{ $inspectingRecord['code'] }}</h3>
+                            </div>
+                            <button wire:click="closeRegistryInspector" class="text-slate-400 hover:text-neutral-strong text-xl font-bold cursor-pointer">&times;</button>
+                        </div>
+
+                        <!-- Title & Office Particulars -->
+                        <div class="space-y-1">
+                            <h4 class="text-sm font-bold text-neutral-strong">{{ $inspectingRecord['title'] }}</h4>
+                            <p class="text-xs text-slate-500">{{ $inspectingRecord['notes'] }}</p>
+                        </div>
+
+                        <!-- Financial Metric Card -->
+                        <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2.5">
+                            <div class="flex items-center justify-between text-xs">
+                                <span class="text-slate-500">Allocated Earmark:</span>
+                                <span class="font-mono font-bold text-neutral-strong">₱{{ number_format($inspectingRecord['allocated'], 2) }}</span>
+                            </div>
+                            <div class="flex items-center justify-between text-xs">
+                                <span class="text-slate-500">Total Disbursed:</span>
+                                <span class="font-mono font-bold text-slate-700">₱{{ number_format($inspectingRecord['spent'], 2) }}</span>
+                            </div>
+                            <div class="flex items-center justify-between text-xs pt-2 border-t border-slate-200">
+                                <span class="font-bold text-slate-700">Available Balance:</span>
+                                <span class="font-mono font-black text-brand text-sm">₱{{ number_format($inspectingRecord['balance'], 2) }}</span>
+                            </div>
+                        </div>
+
+                        <!-- Category-Specific Breakdown -->
+                        <div>
+                            <h5 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Category Specifications</h5>
+                            <div class="p-3 bg-slate-50 rounded-lg border border-slate-100 text-xs space-y-1.5 font-mono">
+                                <div class="flex justify-between">
+                                    <span class="text-slate-500">Office / Unit:</span>
+                                    <span class="text-neutral-strong">{{ $inspectingRecord['office'] }}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-slate-500">Fiscal Period:</span>
+                                    <span class="text-neutral-strong">FY {{ $inspectingRecord['fiscal_year'] }}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-slate-500">Registration Date:</span>
+                                    <span class="text-neutral-strong">{{ $inspectingRecord['created_at'] }}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-slate-500">Lifecycle Status:</span>
+                                    <span class="font-bold text-brand">{{ $inspectingRecord['status'] }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Footer Action -->
+                    <div class="pt-4 border-t border-slate-100">
+                        <button 
+                            wire:click="closeRegistryInspector"
+                            class="w-full py-2.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs cursor-pointer transition-colors"
+                        >
+                            Close Inspector
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    <!-- MODAL 1: PRIVATE DONATION FORM -->
+    <div 
+        x-show="$wire.showDonationModal"
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0F172A]/80 backdrop-blur-md"
+        style="display: none;"
+    >
+        <div class="w-full max-w-lg bg-white border border-slate-200 rounded-2xl shadow-xl p-6 space-y-4 text-neutral-strong">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h3 class="text-base font-bold text-brand">Record Private Donation</h3>
+                <button wire:click="closeDonationModal" class="text-slate-400 hover:text-neutral-strong text-xl font-bold cursor-pointer">&times;</button>
+            </div>
+
+            <form wire:submit="saveDonation" class="space-y-4 text-xs">
+                <!-- Donation Type Toggle -->
+                <div>
+                    <label class="block font-bold uppercase tracking-wider text-slate-500 mb-1.5">Donation Type</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <label class="flex items-center justify-center p-2.5 rounded-lg border cursor-pointer font-bold transition-all {{ $donationType === 'Cash' ? 'bg-emerald-50 border-brand text-brand shadow-xs' : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100' }}">
+                            <input type="radio" wire:model.live="donationType" value="Cash" class="hidden">
+                            <span>Cash Donation (₱)</span>
+                        </label>
+                        <label class="flex items-center justify-center p-2.5 rounded-lg border cursor-pointer font-bold transition-all {{ $donationType === 'Goods' ? 'bg-emerald-50 border-brand text-brand shadow-xs' : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100' }}">
+                            <input type="radio" wire:model.live="donationType" value="Goods" class="hidden">
+                            <span>Goods / In-Kind</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Donor Information -->
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-bold text-slate-600 mb-1">Donor Type</label>
+                        <select wire:model="donorType" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-neutral-strong">
+                            <option value="Organization">Organization / Foundation</option>
+                            <option value="Person">Individual Person</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-600 mb-1">Donor Name *</label>
+                        <input type="text" wire:model="donorName" placeholder="Donor or Org Name" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-neutral-strong" required>
+                    </div>
+                </div>
+
+                <!-- Dynamic Cash Fields -->
+                @if($donationType === 'Cash')
+                    <div>
+                        <label class="block font-bold text-slate-600 mb-1">Donation Amount (PHP) *</label>
+                        <input type="number" step="0.01" wire:model="cashAmount" placeholder="e.g. 50000.00" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-neutral-strong font-mono text-sm" required>
+                    </div>
+                @else
+                    <!-- Dynamic Goods Fields -->
+                    <div class="grid grid-cols-3 gap-2">
+                        <div class="col-span-2">
+                            <label class="block font-bold text-slate-600 mb-1">Item Name *</label>
+                            <input type="text" wire:model="goodsItemName" placeholder="e.g. Rice 25kg" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-neutral-strong" required>
+                        </div>
+                        <div>
+                            <label class="block font-bold text-slate-600 mb-1">Unit</label>
+                            <select wire:model="goodsUnit" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-neutral-strong">
+                                <option value="Sacks">Sacks</option>
+                                <option value="Boxes">Boxes</option>
+                                <option value="Kits">Kits</option>
+                                <option value="Pieces">Pieces</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block font-bold text-slate-600 mb-1">Quantity *</label>
+                            <input type="number" wire:model="goodsQuantity" placeholder="e.g. 100" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-neutral-strong font-mono" required>
+                        </div>
+                        <div>
+                            <label class="block font-bold text-slate-600 mb-1">Estimated Value (₱)</label>
+                            <input type="number" step="0.01" wire:model="goodsEstimatedValue" placeholder="e.g. 150000.00" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-neutral-strong font-mono">
+                        </div>
+                    </div>
+                @endif
+
+                <div>
+                    <label class="block font-bold text-slate-600 mb-1">Notes / Reference Details</label>
+                    <textarea wire:model="donationNotes" rows="2" placeholder="Official receipt #, remarks..." class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-neutral-strong"></textarea>
+                </div>
+
+                <div class="flex justify-end gap-2 pt-3 border-t border-slate-100">
+                    <button type="button" wire:click="closeDonationModal" class="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold cursor-pointer">Cancel</button>
+                    <button type="submit" class="px-4 py-2 rounded-lg bg-brand hover:bg-emerald-700 text-white font-bold cursor-pointer">Post Donation to Ledger</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 2: PROJECT CREATION 4-STEP WIZARD -->
+    <div 
+        x-show="$wire.showProjectModal"
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0F172A]/80 backdrop-blur-md overflow-hidden"
+        style="display: none;"
+    >
+        <div class="w-full max-w-4xl bg-white border border-slate-200 rounded-2xl shadow-2xl p-6 text-neutral-strong max-h-[92vh] flex flex-col justify-between">
+            
+            <!-- Wizard Header & Progress Bar -->
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3 shrink-0">
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-brand border border-emerald-200">
+                            Wizard Step {{ $wizardStep }} of 4
+                        </span>
+                        <h3 class="text-base font-bold text-brand">Create Ayuda Project</h3>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-0.5">
+                        @if($wizardStep === 1) Select 1:1 Funding Source & Benefit Type
+                        @elseif($wizardStep === 2) Configure Project Particulars & Targets
+                        @elseif($wizardStep === 3) Financial Earmark Review & Timeline
+                        @elseif($wizardStep === 4) Optional Beneficiary Pre-Enrollment (CRS Live)
+                        @endif
+                    </p>
+                </div>
+                <button wire:click="closeProjectModal" class="text-slate-400 hover:text-neutral-strong text-xl font-bold cursor-pointer">&times;</button>
+            </div>
+
+            <!-- Step Progress Indicators -->
+            <div class="grid grid-cols-4 gap-2 text-center text-xs font-bold my-3 shrink-0">
+                <div class="p-2 rounded-lg border {{ $wizardStep >= 1 ? 'bg-emerald-50 border-brand text-brand' : 'bg-slate-50 border-slate-200 text-slate-400' }}">
+                    1. Funding Source
+                </div>
+                <div class="p-2 rounded-lg border {{ $wizardStep >= 2 ? 'bg-emerald-50 border-brand text-brand' : 'bg-slate-50 border-slate-200 text-slate-400' }}">
+                    2. Particulars
+                </div>
+                <div class="p-2 rounded-lg border {{ $wizardStep >= 3 ? 'bg-emerald-50 border-brand text-brand' : 'bg-slate-50 border-slate-200 text-slate-400' }}">
+                    3. Earmark Review
+                </div>
+                <div class="p-2 rounded-lg border {{ $wizardStep >= 4 ? 'bg-emerald-50 border-brand text-brand' : 'bg-slate-50 border-slate-200 text-slate-400' }}">
+                    4. Beneficiaries
+                </div>
+            </div>
+
+            <!-- WIZARD STEP BODY (SCROLLABLE IF NEEDED) -->
+            <div class="flex-1 min-h-0 overflow-y-auto py-1">
+                <!-- STEP 1: FUNDING SOURCE -->
+                @if($wizardStep === 1)
+                    <div class="space-y-4 text-xs">
+                        <div>
+                            <label class="block font-bold uppercase tracking-wider text-slate-500 mb-1.5">Select 1:1 Funding Source *</label>
+                            <select wire:model.live="newProjectFundingSourceId" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-neutral-strong font-medium">
+                                <option value="">-- Select Source Pool --</option>
+                                @foreach($fundingSources as $source)
+                                    <option value="{{ $source->id }}">
+                                        [{{ $source->funding_type->value }}] {{ $source->source_code }} - {{ $source->title }} (Available: ₱{{ number_format($source->remaining_balance, 2) }})
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block font-bold uppercase tracking-wider text-slate-500 mb-1.5">Benefit Type</label>
+                            <div class="grid grid-cols-2 gap-3">
+                                <label class="flex items-center justify-center p-3 rounded-lg border cursor-pointer font-bold transition-all {{ $newProjectBenefitType === 'Cash' ? 'bg-emerald-50 border-brand text-brand shadow-xs' : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100' }}">
+                                    <input type="radio" wire:model.live="newProjectBenefitType" value="Cash" class="hidden">
+                                    <span>Direct Cash Assistance (₱)</span>
+                                </label>
+                                <label class="flex items-center justify-center p-3 rounded-lg border cursor-pointer font-bold transition-all {{ $newProjectBenefitType === 'Goods' ? 'bg-emerald-50 border-brand text-brand shadow-xs' : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100' }}">
+                                    <input type="radio" wire:model.live="newProjectBenefitType" value="Goods" class="hidden">
+                                    <span>In-Kind Goods / Supplies</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                @endif
+
+                <!-- STEP 2: PROJECT PARTICULARS -->
+                @if($wizardStep === 2)
+                    <div class="space-y-4 text-xs">
+                        <div>
+                            <label class="block font-bold text-slate-600 mb-1">Project Title *</label>
+                            <input type="text" wire:model="newProjectTitle" placeholder="e.g. Sulop Indigent Emergency Aid 2026" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-neutral-strong font-medium">
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block font-bold text-slate-600 mb-1">Budget Cap (₱) *</label>
+                                <input type="number" step="0.01" wire:model="newProjectBudgetCap" placeholder="e.g. 250000.00" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-neutral-strong font-mono">
+                            </div>
+                            <div>
+                                <label class="block font-bold text-slate-600 mb-1">Unit Benefit (₱) per Beneficiary</label>
+                                <input type="number" step="0.01" wire:model="newProjectUnitAmount" placeholder="e.g. 5000.00" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-neutral-strong font-mono">
+                            </div>
+                        </div>
+
+                        @if($newProjectBenefitType === 'Goods')
+                            <div class="grid grid-cols-3 gap-3">
+                                <div class="col-span-2">
+                                    <label class="block font-bold text-slate-600 mb-1">Item Name</label>
+                                    <input type="text" wire:model="newProjectItemName" placeholder="e.g. Rice 25kg" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-neutral-strong">
+                                </div>
+                                <div>
+                                    <label class="block font-bold text-slate-600 mb-1">Unit</label>
+                                    <input type="text" wire:model="newProjectItemUnit" placeholder="e.g. Sacks" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-neutral-strong">
+                                </div>
+                            </div>
+                        @endif
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block font-bold text-slate-600 mb-1">Target Barangay (Scope)</label>
+                                <select wire:model="newProjectTargetBarangay" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-neutral-strong">
+                                    <option value="">Municipality-Wide</option>
+                                    @foreach($barangays as $brgy)
+                                        <option value="{{ $brgy }}">{{ $brgy }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block font-bold text-slate-600 mb-1">Target Beneficiary Count</label>
+                                <input type="number" wire:model="newProjectTargetCount" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-neutral-strong font-mono">
+                            </div>
+                        </div>
+                    </div>
+                @endif
+
+                <!-- STEP 3: FINANCIAL EARMARK & TIMELINE REVIEW -->
+                @if($wizardStep === 3)
+                    <div class="space-y-4 text-xs">
+                        <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+                            <div class="flex justify-between">
+                                <span class="text-slate-500">Project Title:</span>
+                                <span class="font-bold text-neutral-strong">{{ $newProjectTitle }}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-slate-500">Earmarked Budget Cap:</span>
+                                <span class="font-mono font-bold text-brand">₱{{ number_format((float) ($newProjectBudgetCap ?: 0), 2) }}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-slate-500">Unit Amount:</span>
+                                <span class="font-mono text-neutral-strong">₱{{ number_format((float) ($newProjectUnitAmount ?: 0), 2) }} / recipient</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-slate-500">Target Coverage:</span>
+                                <span class="font-medium text-slate-700">{{ $newProjectTargetBarangay ?: 'Municipality-Wide' }} ({{ $newProjectTargetCount }} slots)</span>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block font-bold text-slate-600 mb-1">Start Date</label>
+                                <input type="date" wire:model="newProjectStartDate" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-neutral-strong">
+                            </div>
+                            <div>
+                                <label class="block font-bold text-slate-600 mb-1">End Date</label>
+                                <input type="date" wire:model="newProjectEndDate" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-neutral-strong">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block font-bold text-slate-600 mb-1">Project Notes / Program Description</label>
+                            <textarea wire:model="newProjectDescription" rows="2" placeholder="Special requirements, guidelines, voucher details..." class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-neutral-strong"></textarea>
+                        </div>
+                    </div>
+                @endif
+
+                <!-- STEP 4: BENEFICIARY CANDIDATE ENROLLMENT (TWO-PANE + HOUSEHOLD REVIEW) -->
+                @if($wizardStep === 4)
+                    <div class="space-y-3 text-xs h-full flex flex-col min-h-0">
+                        <!-- Summary Alert Banner -->
+                        <div class="p-2.5 rounded-lg bg-emerald-50 border border-emerald-200 flex items-center justify-between text-xs text-brand shrink-0">
+                            <span class="font-medium">
+                                Showing first {{ count($candidates) }} of {{ number_format($totalCandidatesCount) }} Sulop citizens in live CRS registry — refine search to narrow pool.
+                            </span>
+                            <span class="font-mono font-bold">{{ count($selectedBeneficiaries) }} selected</span>
+                        </div>
+
+                        <!-- Two-Pane Layout Container with Fixed Height and Inner Scroll -->
+                        <div class="grid grid-cols-1 lg:grid-cols-12 gap-3 h-[380px] min-h-0">
+                            
+                            <!-- Left Pane: Searchable / Paginated Candidates -->
+                            <div class="lg:col-span-7 border border-slate-200 rounded-xl p-3 flex flex-col min-h-0 bg-slate-50/50">
+                                <!-- Filters -->
+                                <div class="flex gap-2 mb-2 shrink-0">
+                                    <input 
+                                        type="text" 
+                                        wire:model.live.debounce.250ms="candidateSearch" 
+                                        placeholder="Search citizen name or CRN..." 
+                                        class="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs text-neutral-strong"
+                                    >
+                                    <select wire:model.live="candidateBarangay" class="w-36 bg-white border border-slate-300 rounded-lg px-2 py-1.5 text-xs text-neutral-strong">
+                                        <option value="">All Barangays</option>
+                                        @foreach($barangays as $brgy)
+                                            <option value="{{ $brgy }}">{{ $brgy }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+
+                                <!-- Candidate List (Scrollable) -->
+                                <div class="flex-1 min-h-0 overflow-y-auto divide-y divide-slate-100 bg-white rounded-lg border border-slate-200">
+                                    @forelse($candidates as $candidate)
+                                        <div 
+                                            wire:click="openHouseholdReview({{ $candidate->id }})"
+                                            class="p-2 hover:bg-emerald-50/60 cursor-pointer flex items-center justify-between transition-colors group"
+                                        >
+                                            <div>
+                                                <p class="font-bold text-neutral-strong group-hover:text-brand text-xs">{{ $candidate->full_name }}</p>
+                                                <p class="text-[10px] text-slate-500 font-mono">
+                                                    {{ $candidate->civil_registry_id ?: $candidate->civilregistry_id ?: $candidate->beneficiary_id }} • {{ $candidate->barangay }}
+                                                </p>
+                                            </div>
+                                            <span class="text-[10px] font-bold text-brand group-hover:underline px-1.5 py-0.5 rounded bg-emerald-50 border border-emerald-100">Review &rarr;</span>
+                                        </div>
+                                    @empty
+                                        <div class="p-8 text-center text-slate-400">
+                                            No CRS citizen records match your filter.
+                                        </div>
+                                    @endforelse
+                                </div>
+                            </div>
+
+                            <!-- Right Pane: Currently Selected List -->
+                            <div class="lg:col-span-5 border border-slate-200 rounded-xl p-3 flex flex-col min-h-0 bg-white">
+                                <div class="flex items-center justify-between pb-2 border-b border-slate-100 shrink-0">
+                                    <span class="font-bold text-neutral-strong text-xs">
+                                        Selected Candidates ({{ count($selectedBeneficiaries) }})
+                                    </span>
+                                    @if(count($selectedBeneficiaries) > 0)
+                                        <button wire:click="clearAllCandidates" class="text-[11px] text-rose-600 hover:underline font-bold cursor-pointer">Clear All</button>
+                                    @endif
+                                </div>
+
+                                <!-- Selected Items Container (Scrollable) -->
+                                <div class="flex-1 min-h-0 overflow-y-auto divide-y divide-slate-100 my-1.5">
+                                    @forelse($selectedBeneficiaries as $key => $sel)
+                                        <div class="py-1.5 flex items-center justify-between">
+                                            <div>
+                                                <p class="font-bold text-neutral-strong text-xs">{{ $sel['full_name'] }}</p>
+                                                <p class="text-[10px] text-slate-400 font-mono">{{ $sel['barangay'] }}</p>
+                                            </div>
+                                            <button 
+                                                wire:click="removeCandidate('{{ $key }}')" 
+                                                class="text-slate-400 hover:text-rose-600 p-1 cursor-pointer text-sm font-bold"
+                                                title="Remove candidate"
+                                            >
+                                                &times;
+                                            </button>
+                                        </div>
+                                    @empty
+                                        <div class="p-8 text-center text-slate-400 text-xs">
+                                            No candidates enrolled yet. Click any candidate on the left to review household history and add.
+                                        </div>
+                                    @endforelse
+                                </div>
+
+                                <div class="pt-2 border-t border-slate-100 text-[11px] text-slate-500 font-mono shrink-0">
+                                    Target Count: {{ $newProjectTargetCount }} slots
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                @endif
+            </div>
+
+            <!-- WIZARD FOOTER ACTIONS -->
+            <div class="flex items-center justify-between pt-3 border-t border-slate-100 shrink-0">
+                @if($wizardStep > 1)
+                    <button type="button" wire:click="prevStep" class="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs cursor-pointer">
+                        &larr; Back
+                    </button>
+                @else
+                    <button type="button" wire:click="closeProjectModal" class="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs cursor-pointer">
+                        Cancel
+                    </button>
+                @endif
+
+                <div class="flex items-center gap-2">
+                    @if($wizardStep === 1)
+                        <button type="button" wire:click="nextStep" class="px-5 py-2 rounded-lg bg-brand hover:bg-emerald-800 text-white font-bold text-xs cursor-pointer flex items-center gap-1.5">
+                            <span>Continue to Particulars</span>
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                        </button>
+                    @elseif($wizardStep === 2)
+                        <button type="button" wire:click="nextStep" class="px-5 py-2 rounded-lg bg-brand hover:bg-emerald-800 text-white font-bold text-xs cursor-pointer flex items-center gap-1.5">
+                            <span>Review Earmark</span>
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                        </button>
+                    @elseif($wizardStep === 3)
+                        <button 
+                            type="button" 
+                            wire:click="createProject(new \App\Services\BudgetLedgerService)" 
+                            class="px-4 py-2 rounded-lg bg-slate-200 hover:bg-slate-300 text-neutral-strong font-bold text-xs cursor-pointer"
+                        >
+                            Skip Enrollment & Create Project
+                        </button>
+                        <button 
+                            type="button" 
+                            wire:click="nextStep" 
+                            class="px-5 py-2 rounded-lg bg-accent hover:bg-amber-400 text-neutral-strong font-bold text-xs cursor-pointer flex items-center gap-1.5"
+                        >
+                            <span>Enroll Candidates (Step 4)</span>
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                        </button>
+                    @elseif($wizardStep === 4)
+                        <button 
+                            type="button" 
+                            wire:click="createProject(new \App\Services\BudgetLedgerService)" 
+                            class="px-6 py-2.5 rounded-lg bg-brand hover:bg-emerald-800 text-white font-black text-xs cursor-pointer shadow-md"
+                        >
+                            Create Project & Enroll Candidates
+                        </button>
+                    @endif
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- MODAL 2B: HOUSEHOLD AUDIT REVIEW MODAL (TWO-STEP CONFIRMATION) -->
+    @if($showHouseholdModal && $reviewingCandidate)
+        <div class="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-[#0F172A]/85 backdrop-blur-md">
+            <div class="w-full max-w-2xl bg-white border border-slate-200 rounded-2xl shadow-2xl p-6 space-y-4 text-neutral-strong">
+                
+                <!-- Modal Header -->
+                <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-brand border border-emerald-200">
+                                Household Review
+                            </span>
+                            <h3 class="text-base font-bold text-neutral-strong">{{ $reviewingCandidate['full_name'] }}</h3>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-0.5">
+                            CRN: <span class="font-mono font-bold text-brand">{{ $reviewingCandidate['civil_registry_id'] }}</span> • Barangay: {{ $reviewingCandidate['barangay'] }}
+                        </p>
+                    </div>
+                    <button wire:click="closeHouseholdReview" class="text-slate-400 hover:text-neutral-strong text-xl font-bold cursor-pointer">&times;</button>
+                </div>
+
+                <!-- Demographics & Household Structure Card -->
+                <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-1.5">
+                    <div class="flex items-center justify-between">
+                        <span class="text-slate-500">Household Code:</span>
+                        <span class="font-mono font-bold text-neutral-strong">{{ $reviewingHouseholdCode }}</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-slate-500">Household Head:</span>
+                        <span class="font-bold text-neutral-strong">{{ $reviewingHouseholdHead }}</span>
+                    </div>
+                    @if($reviewingDemographicsSummary)
+                        <div class="flex items-center justify-between pt-1 border-t border-slate-200">
+                            <span class="text-slate-500">Demographics:</span>
+                            <span class="font-medium text-slate-700">{{ $reviewingDemographicsSummary }}</span>
+                        </div>
+                    @endif
+                </div>
+
+                <!-- Household Members & Claims History Table -->
+                <div class="space-y-2">
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Household Members & Claims Record</span>
+                    <div class="border border-slate-200 rounded-xl overflow-hidden max-h-48 overflow-y-auto">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider border-b border-slate-200 sticky top-0">
+                                <tr>
+                                    <th class="px-3 py-2">Full Name</th>
+                                    <th class="px-3 py-2">Relationship</th>
+                                    <th class="px-3 py-2">Sex / Age</th>
+                                    <th class="px-3 py-2 text-right">Prior Benefits</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100 bg-white">
+                                @foreach($reviewingHouseholdMembers as $member)
+                                    <tr>
+                                        <td class="px-3 py-2 font-bold text-neutral-strong">{{ $member['full_name'] }}</td>
+                                        <td class="px-3 py-2 text-slate-600">{{ $member['relationship'] }}</td>
+                                        <td class="px-3 py-2 text-slate-500 font-mono">{{ $member['sex'] }} • {{ $member['age'] }}</td>
+                                        <td class="px-3 py-2 text-right font-mono font-bold {{ $member['benefits_count'] > 0 ? 'text-amber-600' : 'text-slate-400' }}">
+                                            {{ $member['benefits_count'] }} claim(s)
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Household Total Statement -->
+                <div class="p-3 rounded-lg bg-amber-50/70 border border-amber-200 text-xs text-amber-900 font-medium flex items-center justify-between">
+                    @if($reviewingHouseholdTotalBenefits > 0)
+                        <span>⚠️ This household has received <strong>{{ $reviewingHouseholdTotalBenefits }} benefit(s)</strong> in total across all municipal projects.</span>
+                    @else
+                        <span>✓ This household has not received any aid benefits yet.</span>
+                    @endif
+                </div>
+
+                <!-- Modal Actions -->
+                <div class="flex justify-end gap-2 pt-3 border-t border-slate-100">
+                    <button type="button" wire:click="closeHouseholdReview" class="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold cursor-pointer">
+                        Cancel
+                    </button>
+                    <button type="button" wire:click="confirmAddCandidate" class="px-5 py-2 rounded-lg bg-brand hover:bg-emerald-800 text-white text-xs font-bold cursor-pointer shadow-xs">
+                        Add to Project
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    @endif
+
+    <!-- MODAL 3: REALLOCATION CONFIRMATION -->
+    <div 
+        x-show="$wire.showReallocationModal"
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0F172A]/80 backdrop-blur-md"
+        style="display: none;"
+    >
+        <div class="w-full max-w-md bg-white border border-slate-200 rounded-2xl shadow-xl p-6 space-y-4 text-neutral-strong">
+            <h3 class="text-base font-bold text-neutral-strong">Reallocate Unspent Project Earmark?</h3>
+            <p class="text-xs text-slate-600">
+                This action will reclaim the remaining unspent budget cap from this project back into its parent funding source's unrestricted pool and close the project. A permanent Reallocation entry will be posted to the ledger.
+            </p>
+            <div class="flex justify-end gap-2 pt-3 border-t border-slate-100">
+                <button type="button" wire:click="$set('showReallocationModal', false)" class="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold cursor-pointer">Cancel</button>
+                <button type="button" wire:click="executeReallocation(new \App\Services\BudgetLedgerService)" class="px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold cursor-pointer">Confirm Reallocation</button>
+            </div>
+        </div>
+    </div>
+</div>
