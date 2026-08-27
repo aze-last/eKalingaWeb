@@ -12,7 +12,16 @@
         </div>
 
         <div class="flex items-center gap-2">
-            <span class="text-xs font-mono text-slate-500 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-lg">
+            <!-- Real-time Query Activity Pill -->
+            <div wire:loading.flex class="items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-xs font-bold text-brand shadow-xs">
+                <span class="relative flex h-2 w-2">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-2 w-2 bg-brand"></span>
+                </span>
+                <span>Fetching Live CRS Data...</span>
+            </div>
+
+            <span wire:loading.remove class="text-xs font-mono text-slate-500 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-lg">
                 CRS: <strong class="text-brand font-bold">val_beneficiaries</strong>
             </span>
         </div>
@@ -26,7 +35,7 @@
                 <span>External CRS Database Notice</span>
             </div>
             <p class="text-slate-700 leading-relaxed font-mono text-[11px]">{{ $connectionError }}</p>
-            <p class="text-[11px] text-slate-500 italic mt-0.5">Please check network connection or remote IP whitelist on the CRS MySQL host (192.203.175.157:3306).</p>
+            <p class="text-[11px] text-slate-500 italic mt-0.5">Please check network connection or remote IP whitelist on the CRS MySQL host (193.203.175.157:3306).</p>
         </div>
     @endif
 
@@ -40,12 +49,21 @@
 
             <!-- Search & Filters -->
             <div class="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
-                <input 
-                    wire:model.live.debounce.300ms="search"
-                    type="text" 
-                    placeholder="Search name, CRN, or household #..."
-                    class="bg-white border border-slate-300 rounded-lg px-3.5 py-2 text-xs text-neutral-strong placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-brand w-full sm:w-64"
-                >
+                <div class="relative w-full sm:w-64">
+                    <input 
+                        wire:model.live.debounce.300ms="search"
+                        type="text" 
+                        placeholder="Search name, CRN, or household #..."
+                        class="bg-white border border-slate-300 rounded-lg pl-3.5 pr-8 py-2 text-xs text-neutral-strong placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-brand w-full"
+                    >
+                    <div wire:loading wire:target="search" class="absolute right-2.5 top-2.5">
+                        <svg class="animate-spin h-3.5 w-3.5 text-brand" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    </div>
+                </div>
+
                 @if(!empty($barangays))
                     <select 
                         wire:model.live="selectedBarangay"
@@ -62,17 +80,6 @@
 
         <!-- Masterlist Table -->
         <div class="overflow-x-auto relative">
-            <!-- Loading Skeleton Overlay -->
-            <div wire:loading class="absolute inset-0 bg-white/70 backdrop-blur-xs z-10 flex items-center justify-center">
-                <div class="flex items-center gap-2 text-brand font-bold text-xs">
-                    <svg class="animate-spin h-4 w-4 text-brand" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    <span>Querying live CRS records...</span>
-                </div>
-            </div>
-
             <table class="w-full text-left text-xs">
                 <thead class="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider border-y border-slate-100">
                     <tr>
@@ -85,7 +92,41 @@
                         <th class="px-4 py-3 text-right rounded-r-lg">Action</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-slate-100">
+
+                <!-- SKELETON LOADING ROWS (SHOWN ON WIRE:LOADING) -->
+                <tbody wire:loading.table-row-group class="divide-y divide-slate-100">
+                    @for($i = 0; $i < 8; $i++)
+                        <tr class="animate-pulse">
+                            <td class="px-4 py-4">
+                                <div class="h-3.5 bg-slate-200 rounded w-28"></div>
+                            </td>
+                            <td class="px-4 py-4">
+                                <div class="space-y-1.5">
+                                    <div class="h-3.5 bg-slate-200 rounded w-40"></div>
+                                    <div class="h-2.5 bg-slate-100 rounded w-16"></div>
+                                </div>
+                            </td>
+                            <td class="px-4 py-4">
+                                <div class="h-3.5 bg-slate-200 rounded w-24"></div>
+                            </td>
+                            <td class="px-4 py-4">
+                                <div class="h-3.5 bg-slate-200 rounded w-20"></div>
+                            </td>
+                            <td class="px-4 py-4">
+                                <div class="h-3.5 bg-slate-200 rounded w-24"></div>
+                            </td>
+                            <td class="px-4 py-4">
+                                <div class="h-3.5 bg-slate-200 rounded w-20"></div>
+                            </td>
+                            <td class="px-4 py-4 text-right">
+                                <div class="h-6 bg-slate-200 rounded-md w-20 ml-auto"></div>
+                            </td>
+                        </tr>
+                    @endfor
+                </tbody>
+
+                <!-- ACTUAL DATA ROWS (HIDDEN DURING WIRE:LOADING) -->
+                <tbody wire:loading.remove class="divide-y divide-slate-100">
                     @forelse($beneficiaries as $ben)
                         @php
                             $targetId = $ben->civil_registry_id ?: $ben->id;

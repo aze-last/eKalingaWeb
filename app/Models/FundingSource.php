@@ -47,6 +47,11 @@ class FundingSource extends Model
         return $this->hasMany(BudgetLedgerEntry::class);
     }
 
+    public function budgetLedgerEntries(): HasMany
+    {
+        return $this->hasMany(BudgetLedgerEntry::class);
+    }
+
     public function donations(): HasMany
     {
         return $this->hasMany(Donation::class);

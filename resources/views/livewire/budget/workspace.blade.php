@@ -256,7 +256,6 @@
                     <thead class="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider border-y border-slate-100">
                         <tr>
                             <th class="px-4 py-3 rounded-l-lg">Category</th>
-                            <th class="px-4 py-3">Code / Ref</th>
                             <th class="px-4 py-3">Title & Particulars</th>
                             <th class="px-4 py-3 text-right">Allocated / Cap</th>
                             <th class="px-4 py-3 text-right">Disbursed / Spent</th>
@@ -285,11 +284,8 @@
                                         {{ $item['category'] }}
                                     </span>
                                 </td>
-                                <td class="px-4 py-3.5 font-mono font-bold text-brand group-hover:underline">
-                                    {{ $item['code'] }}
-                                </td>
                                 <td class="px-4 py-3.5">
-                                    <p class="font-bold text-neutral-strong">{{ $item['title'] }}</p>
+                                    <p class="font-bold text-neutral-strong group-hover:text-brand">{{ $item['title'] }}</p>
                                     <p class="text-[11px] text-slate-500">{{ $item['detail_summary'] }}</p>
                                 </td>
                                 <td class="px-4 py-3.5 text-right font-mono font-bold text-neutral-strong">
@@ -315,7 +311,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8" class="px-4 py-12 text-center text-slate-400 font-medium">
+                                <td colspan="7" class="px-4 py-12 text-center text-slate-400 font-medium">
                                     No records matching filter criteria in unified registry.
                                 </td>
                             </tr>
@@ -468,15 +464,9 @@
                                 <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-brand border border-emerald-200">
                                     {{ $inspectingRecord['category'] }}
                                 </span>
-                                <h3 class="text-lg font-bold text-neutral-strong mt-1.5 font-mono">{{ $inspectingRecord['code'] }}</h3>
+                                <h3 class="text-base font-bold text-neutral-strong mt-1.5">{{ $inspectingRecord['title'] }}</h3>
                             </div>
                             <button wire:click="closeRegistryInspector" class="text-slate-400 hover:text-neutral-strong text-xl font-bold cursor-pointer">&times;</button>
-                        </div>
-
-                        <!-- Title & Office Particulars -->
-                        <div class="space-y-1">
-                            <h4 class="text-sm font-bold text-neutral-strong">{{ $inspectingRecord['title'] }}</h4>
-                            <p class="text-xs text-slate-500">{{ $inspectingRecord['notes'] }}</p>
                         </div>
 
                         <!-- Financial Metric Card -->

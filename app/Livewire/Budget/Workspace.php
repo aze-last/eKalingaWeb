@@ -14,6 +14,8 @@ use App\Models\FundingSource;
 use App\Models\GgmsConsolidatedTransaction;
 use App\Models\GgmsProjectCache;
 use App\Services\BudgetLedgerService;
+use App\Services\GgmsBudgetSyncService;
+use App\Services\GgmsProjectSyncService;
 use Exception;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Layout;
@@ -187,20 +189,25 @@ class Workspace extends Component
             case 'GGMS Project':
                 $cache = GgmsProjectCache::find($id);
                 if ($cache) {
+                    $allocated = (float) ($cache->allocated_budget ?: $cache->total_allocation);
+                    $spent = (float) $cache->spent_budget;
                     $this->inspectingRecord = [
                         'category' => 'GGMS Project',
-                        'code' => $cache->project_code,
+                        'code' => (string) ($cache->project_details_id ?: "OPP-{$cache->id}"),
                         'title' => $cache->title,
-                        'office' => $cache->office_code,
-                        'fiscal_year' => $cache->fiscal_year,
-                        'allocated' => $cache->allocated_budget,
-                        'spent' => $cache->spent_budget,
-                        'balance' => $cache->allocated_budget - $cache->spent_budget,
-                        'status' => $cache->status,
+                        'office' => (string) ($cache->office ?: 'OFF-2026-0006'),
+                        'fiscal_year' => $cache->fiscal_year ?: 2026,
+                        'allocated' => $allocated,
+                        'spent' => $spent,
+                        'balance' => max(0.00, $allocated - $spent),
+                        'status' => ucfirst($cache->status ?? 'active'),
                         'programs_count' => 0,
                         'created_at' => $cache->last_synced_at?->format('M d, Y h:i A') ?? 'Synced',
-                        'notes' => 'Direct mirrored sub-allocation synced with national GGMS grant database.',
-                        'details' => $cache->raw_payload ?? [],
+                        'notes' => $cache->description ?: "Earmarked GGMS Grant Envelope (Voucher: {$cache->voucher_code})",
+                        'details' => [
+                            'voucher_code' => $cache->voucher_code,
+                            'sync_status' => $cache->status,
+                        ],
                     ];
                     $this->showRegistryInspector = true;
                 }
@@ -632,11 +639,20 @@ class Workspace extends Component
         $this->reallocatingProgramId = null;
     }
 
-    public function syncGgms(): void
-    {
-        GgmsProjectCache::query()->update(['last_synced_at' => now()]);
-        $this->dispatch('play-audio-success');
-        $this->dispatch('toast', type: 'success', message: 'GGMS Government Grant allocations synchronized successfully.');
+    public function syncGgms(
+        GgmsBudgetSyncService $budgetSync,
+        GgmsProjectSyncService $projectSync
+    ): void {
+        try {
+            $budgetSync->syncOfficeBudget('OFF-2026-0006');
+            $count = $projectSync->syncProjects('OFF-2026-0006');
+
+            $this->dispatch('play-audio-success');
+            $this->dispatch('toast', type: 'success', message: "GGMS synchronized: General Office Fund updated and {$count} Sub-Project Envelopes refreshed.");
+        } catch (\Throwable $e) {
+            $this->dispatch('play-audio-error');
+            $this->dispatch('toast', type: 'error', message: "GGMS Sync Failed: {$e->getMessage()}");
+        }
     }
 
     // ------------------------------------------
@@ -691,17 +707,19 @@ class Workspace extends Component
         if (in_array($this->registryCategory, ['ALL', 'GGMS_PROJECT'])) {
             $ggmsList = GgmsProjectCache::latest()->get();
             foreach ($ggmsList as $prj) {
+                $alloc = (float) ($prj->allocated_budget ?: $prj->total_allocation);
+                $spent = (float) $prj->spent_budget;
                 $registryItems->push([
                     'id' => $prj->id,
                     'category' => 'GGMS Project',
-                    'code' => $prj->project_code,
+                    'code' => (string) ($prj->project_details_id ?: $prj->project_code),
                     'title' => $prj->title,
-                    'allocated' => (float) $prj->allocated_budget,
-                    'spent' => (float) $prj->spent_budget,
-                    'balance' => (float) ($prj->allocated_budget - $prj->spent_budget),
-                    'status' => $prj->status,
-                    'date' => $prj->created_at?->format('Y-m-d') ?? date('Y-m-d'),
-                    'detail_summary' => "GGMS Sync • Office {$prj->office_code}",
+                    'allocated' => $alloc,
+                    'spent' => $spent,
+                    'balance' => max(0.00, $alloc - $spent),
+                    'status' => ucfirst($prj->status ?? 'active'),
+                    'date' => $prj->last_synced_at?->format('Y-m-d') ?? date('Y-m-d'),
+                    'detail_summary' => "GGMS Grant • Voucher: {$prj->voucher_code}",
                 ]);
             }
         }

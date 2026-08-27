@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\BenefitType;
 use App\Enums\ProgramStatus;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -16,6 +17,9 @@ class AyudaProgram extends Model
 
     protected $fillable = [
         'funding_source_id',
+        'source_project_details_id',
+        'source_donation_id',
+        'source_ggms_budget_id',
         'program_code',
         'title',
         'benefit_type',
@@ -56,6 +60,16 @@ class AyudaProgram extends Model
         return $this->belongsTo(FundingSource::class);
     }
 
+    public function donation(): BelongsTo
+    {
+        return $this->belongsTo(Donation::class, 'source_donation_id');
+    }
+
+    public function ggmsSnapshot(): BelongsTo
+    {
+        return $this->belongsTo(GovernmentBudgetSnapshot::class, 'source_ggms_budget_id');
+    }
+
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
@@ -71,8 +85,34 @@ class AyudaProgram extends Model
         return $this->hasMany(AyudaProjectClaim::class);
     }
 
-    public function ledgerEntries(): HasMany
+    /**
+     * Resolves fund source code display priority:
+     * 1. Linked GGMS Project Details ID
+     * 2. Private Donation
+     * 3. General GGMS Budget / Linked Funding Source
+     * 4. Fallback to "General Fund"
+     */
+    protected function fundSourceCode(): Attribute
     {
-        return $this->hasMany(BudgetLedgerEntry::class);
+        return Attribute::make(
+            get: function () {
+                if ($this->source_project_details_id) {
+                    return $this->source_project_details_id;
+                }
+                if ($this->source_donation_id && $this->donation) {
+                    return $this->donation->donation_code ?? "DON-{$this->source_donation_id}";
+                }
+                if ($this->fundingSource) {
+                    return $this->fundingSource->source_code;
+                }
+
+                return 'General Fund';
+            }
+        );
+    }
+
+    public function getRemainingBalanceAttribute(): float
+    {
+        return max(0.00, (float) $this->budget_cap - (float) $this->total_disbursed_amount);
     }
 }

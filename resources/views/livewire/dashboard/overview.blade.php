@@ -11,6 +11,15 @@
             <p class="text-xs text-slate-500 mt-1">Real-time overview of municipal aid funds, active disbursements, and cross-system audit logs.</p>
         </div>
         <div class="flex flex-wrap items-center gap-2.5">
+            <!-- Loading Indicator Pill -->
+            <div wire:loading.flex class="items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-xs font-bold text-brand shadow-xs">
+                <span class="relative flex h-2 w-2">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-2 w-2 bg-brand"></span>
+                </span>
+                <span>Refreshing Dashboard...</span>
+            </div>
+
             <a href="{{ route('budget') }}" wire:navigate class="px-3.5 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-xs font-bold text-neutral-strong border border-slate-200 transition-colors flex items-center gap-1.5 cursor-pointer">
                 <svg class="w-4 h-4 text-brand" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
                 <span>New Project</span>
@@ -22,8 +31,23 @@
         </div>
     </div>
 
-    <!-- 4 Primary KPI Summary Cards -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <!-- SKELETON 4 KPI CARDS (ON WIRE:LOADING) -->
+    <div wire:loading.grid class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        @for($i = 0; $i < 4; $i++)
+            <div class="bg-surface border border-slate-200 rounded-xl p-5 shadow-xs animate-pulse space-y-3">
+                <div class="flex items-center justify-between">
+                    <div class="h-3 bg-slate-200 rounded w-32"></div>
+                    <div class="w-8 h-8 rounded-lg bg-slate-100"></div>
+                </div>
+                <div class="h-7 bg-slate-200 rounded w-28 mt-2"></div>
+                <div class="h-2.5 bg-slate-100 rounded w-44"></div>
+                <div class="w-full bg-slate-100 rounded-full h-1.5 mt-4"></div>
+            </div>
+        @endfor
+    </div>
+
+    <!-- 4 Primary KPI Summary Cards (HIDDEN ON WIRE:LOADING) -->
+    <div wire:loading.remove class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <!-- Gov Funds Card -->
         <div class="bg-surface border border-slate-200 rounded-xl p-5 shadow-xs relative overflow-hidden">
             <div class="flex items-center justify-between">
@@ -108,7 +132,28 @@
             </a>
         </div>
 
-        <div class="space-y-3">
+        <!-- SKELETON INITIATIVES (ON WIRE:LOADING) -->
+        <div wire:loading.block class="space-y-3">
+            @for($i = 0; $i < 3; $i++)
+                <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-pulse">
+                    <div class="space-y-2 flex-1">
+                        <div class="flex items-center gap-2">
+                            <div class="h-4 bg-slate-200 rounded w-24"></div>
+                            <div class="h-4 bg-slate-200 rounded w-16"></div>
+                            <div class="h-4 bg-slate-200 rounded w-48"></div>
+                        </div>
+                        <div class="h-3 bg-slate-100 rounded w-64"></div>
+                    </div>
+                    <div class="space-y-2 shrink-0">
+                        <div class="h-3 bg-slate-200 rounded w-36 ml-auto"></div>
+                        <div class="w-48 bg-slate-200 rounded-full h-2"></div>
+                    </div>
+                </div>
+            @endfor
+        </div>
+
+        <!-- ACTUAL INITIATIVES (HIDDEN ON WIRE:LOADING) -->
+        <div wire:loading.remove class="space-y-3">
             @forelse($activePrograms as $program)
                 @php
                     $total = $program->pending_count + $program->released_count + $program->unreleased_count;
