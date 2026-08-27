@@ -8,6 +8,7 @@ use App\Models\AyudaProgram;
 use App\Models\AyudaProjectClaim;
 use App\Models\Beneficiary;
 use App\Models\DistributionEnrollment;
+use App\Services\DigitalIdVerificationService;
 use App\Services\DistributionReleaseService;
 use App\Services\HouseholdVerificationService;
 use Exception;
@@ -74,13 +75,17 @@ class Workspace extends Component
     /**
      * Handle Barcode / QR Scanner Input submission.
      */
-    public function handleScan(string $scannedPayload, DistributionReleaseService $releaseService, HouseholdVerificationService $householdService): void
-    {
+    public function handleScan(
+        string $scannedPayload,
+        DigitalIdVerificationService $verificationService,
+        DistributionReleaseService $releaseService,
+        HouseholdVerificationService $householdService
+    ): void {
         if ($this->isScannerLocked || ! $this->selectedProjectId) {
             return;
         }
 
-        $cleanPayload = trim($scannedPayload);
+        $cleanPayload = $verificationService->normalizePayload($scannedPayload);
         if (empty($cleanPayload)) {
             return;
         }
@@ -90,26 +95,20 @@ class Workspace extends Component
             return;
         }
 
-        // Try to match beneficiary by Civil Registry ID, Household ID, or exact ID
-        $beneficiary = Beneficiary::where('civil_registry_id', $cleanPayload)
-            ->orWhere('household_no', $cleanPayload)
-            ->orWhere('id', (int) $cleanPayload)
-            ->orWhereRaw("CONCAT('EKALIN-', civil_registry_id, '-', ?) = ?", [$program->program_code, $cleanPayload])
-            ->first();
+        // Run Authoritative Verification through DigitalIdVerificationService
+        $verification = $verificationService->verify($cleanPayload, $program->id);
 
-        if (! $beneficiary) {
-            // Also try matching by name parts if payload formatted as "LASTNAME, FIRSTNAME"
-            if (str_contains($cleanPayload, ',')) {
-                [$last, $first] = explode(',', $cleanPayload, 2);
-                $beneficiary = Beneficiary::where('last_name', 'like', trim($last).'%')
-                    ->where('first_name', 'like', trim($first).'%')
-                    ->first();
-            }
+        if (! $verification['success']) {
+            $this->dispatch('play-audio-error');
+            $this->dispatch('toast', type: 'error', message: $verification['message']);
+
+            return;
         }
 
+        $beneficiary = $verification['beneficiary'];
         if (! $beneficiary) {
             $this->dispatch('play-audio-error');
-            $this->dispatch('toast', type: 'error', message: "No beneficiary found matching scan code: {$cleanPayload}");
+            $this->dispatch('toast', type: 'error', message: 'No beneficiary profile linked to this verified card.');
 
             return;
         }
@@ -139,7 +138,8 @@ class Workspace extends Component
         }
 
         // Execute immediate atomic release
-        $this->executeRelease($program, $beneficiary, 'QR_SCAN', $cleanPayload, $releaseService);
+        $verificationMethod = ($verification['status'] === 'OFFLINE_CACHED') ? 'OFFLINE_CACHE_SCAN' : 'QR_SCAN';
+        $this->executeRelease($program, $beneficiary, $verificationMethod, $cleanPayload, $releaseService);
     }
 
     /**

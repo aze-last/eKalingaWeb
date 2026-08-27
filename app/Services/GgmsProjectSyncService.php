@@ -27,8 +27,7 @@ class GgmsProjectSyncService
         try {
             $remoteProjects = DB::connection('ggms')->table('project_details')
                 ->where('office_code', $officeCode)
-                ->orWhere('office_id', '6')
-                ->orWhere('office_id', $officeCode)
+                ->whereNotNull('project_details_id')
                 ->get();
 
             foreach ($remoteProjects as $p) {

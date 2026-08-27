@@ -414,32 +414,44 @@
         return {
             buffer: '',
             lastKeyTime: 0,
+            lastProcessedTime: 0,
             autoDismissTimer: null,
             initScanner() {
-                // Keyboard Wedge hardware scanner listener
+                // Keyboard Wedge hardware scanner listener (HID Emulation)
                 window.addEventListener('keydown', (e) => {
-                    // If target is an explicit textarea or input other than scanner, allow normal typing
+                    // Do not intercept if user is typing in a modal search input or form field
                     if (e.target.tagName === 'TEXTAREA' || (e.target.tagName === 'INPUT' && e.target !== this.$refs.scannerField)) {
                         return;
                     }
 
-                    const currentTime = new Date().getTime();
-                    if (currentTime - this.lastKeyTime > 250) {
+                    const currentTime = Date.now();
+                    const timeDiff = currentTime - this.lastKeyTime;
+
+                    // Stale buffer eviction: If time between keystrokes > 75ms, reset stale buffer
+                    if (timeDiff > 75) {
                         this.buffer = '';
                     }
                     this.lastKeyTime = currentTime;
 
                     if (e.key === 'Enter') {
-                        if (this.buffer.length > 2) {
-                            @this.handleScan(this.buffer);
+                        // Debounce duplicate Enter signals within 400ms
+                        if (currentTime - this.lastProcessedTime < 400) {
+                            this.buffer = '';
+                            return;
+                        }
+
+                        const payload = this.buffer.trim();
+                        if (payload.length >= 2) {
+                            this.lastProcessedTime = currentTime;
+                            @this.handleScan(payload);
                             this.buffer = '';
                         }
-                    } else if (e.key.length === 1) {
+                    } else if (e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
                         this.buffer += e.key;
                     }
                 });
 
-                // Watch for success overlay to auto-dismiss after 1500ms cooldown
+                // Auto-dismiss confirmation overlay after 1500ms cooldown and refocus scanner
                 this.$watch('$wire.showSuccessOverlay', (value) => {
                     if (value) {
                         clearTimeout(this.autoDismissTimer);
@@ -451,8 +463,11 @@
                 });
             },
             submitManualScan(value) {
-                if (value && value.trim().length > 0) {
-                    @this.handleScan(value.trim());
+                const clean = value ? value.trim() : '';
+                const currentTime = Date.now();
+                if (clean.length > 0 && (currentTime - this.lastProcessedTime >= 400)) {
+                    this.lastProcessedTime = currentTime;
+                    @this.handleScan(clean);
                 }
             }
         };
