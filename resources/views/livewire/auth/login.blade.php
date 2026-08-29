@@ -1,49 +1,77 @@
 <div class="min-h-screen w-full flex flex-col lg:flex-row bg-[#080E1E] text-white relative overflow-hidden" x-data="{ showPassword: false }">
-    <!-- Left Hero & Branding Section -->
-    <div class="lg:w-7/12 relative bg-gradient-to-br from-[#070D1C] via-[#0B1426] to-[#091524] p-8 sm:p-12 lg:p-16 flex flex-col justify-between overflow-hidden">
-        <!-- Curved Organic SVG Divider (Desktop) -->
-        <div class="hidden lg:block absolute right-0 top-0 bottom-0 w-32 pointer-events-none z-10 translate-x-1/2">
-            <svg class="h-full w-full text-[#080E1E] fill-current" viewBox="0 0 100 100" preserveAspectRatio="none">
-                <path d="M0 0 C 40 30, 40 70, 0 100 L100 100 L100 0 Z"></path>
-            </svg>
-        </div>
+    <!-- Left Hero & Municipal Branding Section -->
+    <div class="lg:w-7/12 relative min-h-[480px] lg:min-h-screen p-8 sm:p-12 lg:p-16 flex flex-col justify-between overflow-hidden">
+        <!-- Background Wallpaper with Deep Blue Heraldic Overlay -->
+        <div 
+            class="absolute inset-0 bg-cover bg-center transition-all duration-700"
+            style="
+                @if ($loginBgUrl)
+                    background-image: url('{{ asset($loginBgUrl) }}');
+                @else
+                    background-color: #1E3A8A;
+                @endif
+            "
+        ></div>
+
+        <!-- Blue Heraldic Tint & Vignette Overlay -->
+        <div class="absolute inset-0 bg-gradient-to-br from-[#1D4ED8]/85 via-[#1E40AF]/90 to-[#0F172A]/95 backdrop-blur-[0.5px]"></div>
 
         <!-- Subtle Ambient Background Glow -->
-        <div class="absolute -top-24 -left-24 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
-        <div class="absolute -bottom-24 -left-24 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="absolute -top-24 -left-24 w-96 h-96 bg-blue-400/20 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="absolute -bottom-24 -left-24 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
-        <!-- Top Left Brand Badge -->
-        <div class="relative z-20 flex items-center gap-3">
-            <div class="w-8 h-8 rounded-full bg-white/10 p-1 flex items-center justify-center backdrop-blur-xs border border-white/20">
-                <img src="{{ asset($municipalLogo) }}" alt="Seal" class="w-full h-full object-contain">
-            </div>
-            <div>
-                <span class="text-sm font-bold tracking-tight text-white block">Sulop Ayuda</span>
-                <span class="text-[10px] text-slate-400 font-mono block uppercase">eKalinga+ Management</span>
-            </div>
-        </div>
-
-        <!-- Center Large Municipal Seal Emblem -->
-        <div class="relative z-20 my-12 lg:my-0 flex flex-col items-center justify-center">
-            <div class="relative group max-w-[280px] sm:max-w-[340px] lg:max-w-[380px] w-full">
-                <!-- Glowing Aura -->
-                <div class="absolute inset-0 bg-emerald-500/15 rounded-full blur-2xl group-hover:bg-emerald-500/25 transition-all duration-500"></div>
-                <img 
-                    src="{{ asset($municipalLogo) }}" 
-                    alt="Municipality of Sulop Official Seal" 
-                    class="relative w-full h-auto object-contain drop-shadow-2xl brightness-110 contrast-105"
-                >
+        <!-- Top Left Republic Header -->
+        <div class="relative z-20 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full bg-white/10 p-1 flex items-center justify-center backdrop-blur-xs border border-white/20">
+                    <img src="{{ asset($municipalLogo) }}" alt="Seal" class="w-full h-full object-contain">
+                </div>
+                <div>
+                    <span class="text-xs font-bold tracking-tight text-white block">{{ $systemName }}</span>
+                    <span class="text-[10px] text-blue-200 font-mono block uppercase">{{ $systemSubtitle }}</span>
+                </div>
             </div>
         </div>
 
-        <!-- Bottom Tagline & Headline -->
-        <div class="relative z-20 max-w-xl">
-            <h1 class="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight leading-tight">
-                Connect to your municipal ayuda dashboard and sign in.
-            </h1>
-            <p class="mt-4 text-sm sm:text-base text-slate-400 leading-relaxed font-normal">
-                Manage all your municipal assistance, budget allocations, and ayuda disbursements in one place.
-            </p>
+        <!-- Center Large Municipal Seal Emblem & Hierarchy -->
+        <div class="relative z-20 my-auto py-12 flex flex-col items-center justify-center text-center space-y-6">
+            <!-- Seal with Glowing Aura -->
+            <div class="relative group">
+                <div class="absolute inset-0 bg-white/25 rounded-full blur-2xl group-hover:bg-white/35 transition-all duration-500 animate-pulse"></div>
+                <div class="relative w-36 h-36 sm:w-44 sm:h-44 rounded-full bg-white/95 p-3 shadow-2xl border-2 border-white/90 flex items-center justify-center mx-auto transition-transform duration-300 group-hover:scale-105">
+                    <img 
+                        src="{{ asset($municipalLogo) }}" 
+                        alt="{{ $municipalityName }} Official Seal" 
+                        class="w-full h-full object-contain drop-shadow-md"
+                    >
+                </div>
+            </div>
+
+            <!-- Hierarchy Text -->
+            <div class="space-y-1 max-w-lg mx-auto">
+                <p class="text-xs sm:text-sm font-medium text-blue-100 italic tracking-wider">{{ $countryName }}</p>
+                <p class="text-xs sm:text-sm font-medium text-blue-200 italic tracking-wider">{{ $provinceName }}</p>
+                <h1 class="text-2xl sm:text-4xl font-black text-white tracking-tight leading-tight uppercase drop-shadow-md mt-1">
+                    {{ $municipalityName }}
+                </h1>
+                <p class="text-xs sm:text-sm text-blue-100 font-medium tracking-wide mt-1">{{ $municipalAddress }}</p>
+            </div>
+
+            <!-- Divider & Tagline -->
+            @if ($tagline)
+                <div class="pt-2 max-w-md w-full mx-auto space-y-2">
+                    <div class="h-px bg-white/25 w-3/4 mx-auto"></div>
+                    <p class="text-xs sm:text-sm font-medium text-blue-200 italic tracking-widest">
+                        "{{ $tagline }}"
+                    </p>
+                </div>
+            @endif
+        </div>
+
+        <!-- Bottom System Line -->
+        <div class="relative z-20 flex items-center justify-between text-xs text-blue-200/80 pt-4 border-t border-white/10 font-mono">
+            <span>{{ $systemName }}</span>
+            <span>Sulop Ayuda Management</span>
         </div>
     </div>
 
@@ -51,16 +79,18 @@
     <div class="lg:w-5/12 bg-[#080E1E] p-8 sm:p-12 lg:p-16 flex flex-col justify-center relative z-20">
         <div class="w-full max-w-md mx-auto space-y-6">
             
-            <!-- Header with Title and Return Indicator -->
-            <div class="flex items-center justify-between">
-                <div>
-                    <h2 class="text-3xl font-extrabold text-white tracking-tight">Sign In</h2>
-                    <p class="text-xs text-slate-400 mt-1">Admin Login • Authorized Personnel Only</p>
+            <!-- Header with Title and System Identity -->
+            <div class="text-center sm:text-left space-y-2">
+                <div class="w-12 h-12 rounded-xl bg-[#0E1626] border border-slate-800 p-2 flex items-center justify-center shadow-xs mx-auto sm:mx-0">
+                    <img src="{{ asset($municipalLogo) }}" alt="Seal" class="w-full h-full object-contain">
                 </div>
-                <div class="text-emerald-400">
-                    <svg class="w-6 h-6 transform rotate-45" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/>
-                    </svg>
+                <div>
+                    <h2 class="text-2xl sm:text-3xl font-black text-white tracking-tight">{{ $systemName }}</h2>
+                    <p class="text-xs text-slate-400 font-medium">{{ $systemSubtitle }}</p>
+                </div>
+                <div class="pt-2">
+                    <h3 class="text-base font-bold text-slate-200">Admin Sign In</h3>
+                    <p class="text-xs text-slate-400">Sign in to manage municipal operations.</p>
                 </div>
             </div>
 

@@ -16,8 +16,10 @@ use App\Models\GgmsProjectCache;
 use App\Services\BudgetLedgerService;
 use App\Services\GgmsBudgetSyncService;
 use App\Services\GgmsProjectSyncService;
-use Exception;
+use App\Services\PerformanceCacheService;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -102,9 +104,9 @@ class Workspace extends Component
 
     public string $newProjectItemUnit = 'Sacks';
 
-    public int $newProjectItemQty = 1;
+    public string $newProjectItemQty = '1';
 
-    public int $newProjectTargetCount = 50;
+    public string $newProjectTargetCount = '50';
 
     public ?string $newProjectTargetBarangay = '';
 
@@ -339,6 +341,8 @@ class Workspace extends Component
             ]);
         }
 
+        app(PerformanceCacheService::class)->clearFundingCache();
+
         $this->showDonationModal = false;
         $this->dispatch('play-audio-success');
         $this->dispatch('toast', type: 'success', message: 'Private donation registered and posted to immutable ledger.');
@@ -347,6 +351,95 @@ class Workspace extends Component
     // ------------------------------------------
     // PROJECT CREATION WIZARD (4 STEPS)
     // ------------------------------------------
+    #[Computed]
+    public function selectedFundingSource(): ?FundingSource
+    {
+        return $this->newProjectFundingSourceId
+            ? FundingSource::find($this->newProjectFundingSourceId)
+            : null;
+    }
+
+    #[Computed]
+    public function calculatedTotalCost(): float
+    {
+        $unit = (float) ($this->newProjectUnitAmount ?: 0);
+        $count = (int) ($this->newProjectTargetCount ?: 0);
+
+        return $unit * $count;
+    }
+
+    public function getSelectedFundingSourceProperty(): ?FundingSource
+    {
+        return $this->selectedFundingSource;
+    }
+
+    public function getCalculatedTotalCostProperty(): float
+    {
+        return $this->calculatedTotalCost;
+    }
+
+    public function setBudgetCapToMax(): void
+    {
+        $source = $this->selectedFundingSource;
+        if ($source) {
+            $this->newProjectBudgetCap = (string) (float) $source->remaining_balance;
+            $this->validateBudgetCapRealtime();
+        }
+    }
+
+    public function syncBudgetCapWithCalculated(): void
+    {
+        $calculated = $this->calculatedTotalCost;
+        if ($calculated > 0) {
+            $this->newProjectBudgetCap = (string) $calculated;
+            $this->validateBudgetCapRealtime();
+        }
+    }
+
+    public function updatedNewProjectFundingSourceId(): void
+    {
+        $this->validateBudgetCapRealtime();
+    }
+
+    public function updatedNewProjectBudgetCap(): void
+    {
+        $this->validateBudgetCapRealtime();
+    }
+
+    public function updatedNewProjectUnitAmount(): void
+    {
+        $this->validateBudgetCapRealtime();
+    }
+
+    public function updatedNewProjectTargetCount(): void
+    {
+        $this->validateBudgetCapRealtime();
+    }
+
+    protected function validateBudgetCapRealtime(): void
+    {
+        if (! $this->newProjectFundingSourceId || $this->newProjectBudgetCap === '') {
+            return;
+        }
+
+        $source = $this->selectedFundingSource;
+        if (! $source) {
+            return;
+        }
+
+        $max = (float) $source->remaining_balance;
+        $entered = (float) $this->newProjectBudgetCap;
+
+        if ($entered > $max) {
+            $this->addError(
+                'newProjectBudgetCap',
+                'Budget Cap (₱'.number_format($entered, 2).') exceeds the selected funding source available balance of ₱'.number_format($max, 2).'.'
+            );
+        } else {
+            $this->resetErrorBag('newProjectBudgetCap');
+        }
+    }
+
     public function openProjectModal(): void
     {
         $firstSource = FundingSource::where('remaining_balance', '>', 0)->first();
@@ -355,12 +448,16 @@ class Workspace extends Component
         $this->newProjectBenefitType = 'Cash';
         $this->newProjectBudgetCap = '';
         $this->newProjectUnitAmount = '5000';
-        $this->newProjectTargetCount = 50;
+        $this->newProjectItemName = '';
+        $this->newProjectItemUnit = 'Sacks';
+        $this->newProjectItemQty = '1';
+        $this->newProjectTargetCount = '50';
         $this->newProjectTargetBarangay = '';
         $this->wizardStep = 1;
         $this->selectedBeneficiaries = [];
         $this->candidateSearch = '';
         $this->candidateBarangay = '';
+        $this->resetErrorBag();
         $this->showProjectModal = true;
     }
 
@@ -368,6 +465,7 @@ class Workspace extends Component
     {
         $this->showProjectModal = false;
         $this->showHouseholdModal = false;
+        $this->resetErrorBag();
     }
 
     public function goToStep(int $step): void
@@ -378,9 +476,13 @@ class Workspace extends Component
             ]);
         }
         if ($step > 2) {
+            $source = FundingSource::find($this->newProjectFundingSourceId);
+            $maxBalance = $source ? (float) $source->remaining_balance : 0.00;
             $this->validate([
                 'newProjectTitle' => 'required|string|min:3',
-                'newProjectBudgetCap' => 'required|numeric|min:1',
+                'newProjectBudgetCap' => "required|numeric|min:1|max:{$maxBalance}",
+            ], [
+                'newProjectBudgetCap.max' => 'Budget Cap cannot exceed the remaining balance of the selected funding source (₱'.number_format($maxBalance, 2).').',
             ]);
         }
         $this->wizardStep = $step;
@@ -395,9 +497,13 @@ class Workspace extends Component
             ]);
             $this->wizardStep = 2;
         } elseif ($this->wizardStep === 2) {
+            $source = FundingSource::find($this->newProjectFundingSourceId);
+            $maxBalance = $source ? (float) $source->remaining_balance : 0.00;
             $this->validate([
                 'newProjectTitle' => 'required|string|min:3',
-                'newProjectBudgetCap' => 'required|numeric|min:1',
+                'newProjectBudgetCap' => "required|numeric|min:1|max:{$maxBalance}",
+            ], [
+                'newProjectBudgetCap.max' => 'Budget Cap cannot exceed the remaining balance of the selected funding source (₱'.number_format($maxBalance, 2).').',
             ]);
             $this->wizardStep = 3;
         } elseif ($this->wizardStep === 3) {
@@ -528,6 +634,38 @@ class Workspace extends Component
         $this->reviewingCandidate = null;
     }
 
+    public function autoFillCandidatePool(): void
+    {
+        $targetCount = max(1, (int) ($this->newProjectTargetCount ?: 50));
+        $query = Beneficiary::query();
+        if ($this->candidateBarangay) {
+            $query->where('address', 'like', "%{$this->candidateBarangay}%");
+        } elseif ($this->newProjectTargetBarangay) {
+            $query->where('address', 'like', "%{$this->newProjectTargetBarangay}%");
+        }
+
+        $candidates = $query->take($targetCount)->get();
+        $added = 0;
+        foreach ($candidates as $c) {
+            $crn = $c->civil_registry_id ?: $c->civilregistry_id ?: $c->beneficiary_id ?: "CRN-{$c->id}";
+            $this->selectedBeneficiaries[$crn] = [
+                'id' => $c->id,
+                'civil_registry_id' => $crn,
+                'beneficiary_id' => $c->beneficiary_id ?: "BEN-{$c->id}",
+                'full_name' => $c->full_name ?: trim("{$c->first_name} {$c->last_name}"),
+                'household_no' => $c->household_no ?? 'N/A',
+                'barangay' => $c->barangay ?: ($c->address ?? 'Sulop'),
+                'address' => $c->address,
+                'sex' => $c->gender ?? $c->sex ?? 'N/A',
+                'birth_date' => $c->birthDate ?? $c->date_of_birth ?? 'N/A',
+            ];
+            $added++;
+        }
+
+        $this->dispatch('play-audio-success');
+        $this->dispatch('toast', type: 'info', message: "Enlisted {$added} candidate citizen(s) into project roster.");
+    }
+
     public function removeCandidate(string $key): void
     {
         unset($this->selectedBeneficiaries[$key]);
@@ -541,13 +679,19 @@ class Workspace extends Component
     // ------------------------------------------
     // FINALIZE PROJECT CREATION
     // ------------------------------------------
-    public function createProject(BudgetLedgerService $budgetService): void
+    public function createProject(?BudgetLedgerService $budgetService = null): void
     {
+        $budgetService ??= app(BudgetLedgerService::class);
+        $source = FundingSource::findOrFail($this->newProjectFundingSourceId);
+        $maxBalance = (float) $source->remaining_balance;
+
         $this->validate([
             'newProjectFundingSourceId' => 'required|exists:funding_sources,id',
             'newProjectTitle' => 'required|string|min:3',
-            'newProjectBudgetCap' => 'required|numeric|min:1',
+            'newProjectBudgetCap' => "required|numeric|min:1|max:{$maxBalance}",
             'newProjectBenefitType' => 'required|in:Cash,Goods',
+        ], [
+            'newProjectBudgetCap.max' => 'Budget Cap cannot exceed the remaining balance of the selected funding source (₱'.number_format($maxBalance, 2).').',
         ]);
 
         try {
@@ -559,15 +703,17 @@ class Workspace extends Component
                 'unit_amount' => (float) ($this->newProjectUnitAmount ?: 0),
                 'item_name' => $this->newProjectItemName,
                 'item_unit' => $this->newProjectItemUnit,
-                'item_quantity_per_beneficiary' => $this->newProjectItemQty,
-                'target_beneficiaries' => count($this->selectedBeneficiaries) > 0 ? count($this->selectedBeneficiaries) : $this->newProjectTargetCount,
+                'item_quantity_per_beneficiary' => (int) ($this->newProjectItemQty ?: 1),
+                'target_beneficiaries' => count($this->selectedBeneficiaries) > 0 ? count($this->selectedBeneficiaries) : (int) ($this->newProjectTargetCount ?: 0),
                 'target_barangay' => $this->newProjectTargetBarangay ?: null,
-                'start_date' => $this->newProjectStartDate,
-                'end_date' => $this->newProjectEndDate,
-                'description' => $this->newProjectDescription,
+                'start_date' => $this->newProjectStartDate ?: now()->toDateString(),
+                'end_date' => $this->newProjectEndDate ?: null,
+                'description' => $this->newProjectDescription ?: null,
             ]);
 
-            // Enrol manually selected candidates if any
+            $enrolledCount = 0;
+
+            // 1. Enrol manually selected candidates if any
             if (! empty($this->selectedBeneficiaries)) {
                 foreach ($this->selectedBeneficiaries as $b) {
                     DistributionEnrollment::firstOrCreate(
@@ -582,35 +728,51 @@ class Workspace extends Component
                             'enrolled_at' => now(),
                         ]
                     );
+                    $enrolledCount++;
                 }
-            } elseif ($this->autoEnrollAllBarangay) {
-                // Auto-enroll from masterlist if specified
+            } else {
+                // 2. Auto-enroll eligible citizens matching target count & target scope
                 try {
                     $query = Beneficiary::query();
                     if ($this->newProjectTargetBarangay) {
                         $query->where('address', 'like', "%{$this->newProjectTargetBarangay}%");
                     }
-                    $beneficiaries = $query->take($this->newProjectTargetCount)->get();
+                    $limit = max(1, (int) ($this->newProjectTargetCount ?: 50));
+                    $autoBeneficiaries = $query->take($limit)->get();
 
-                    foreach ($beneficiaries as $b) {
+                    foreach ($autoBeneficiaries as $b) {
+                        $crn = $b->civil_registry_id ?: $b->civilregistry_id ?: $b->beneficiary_id ?: "CRN-{$b->id}";
                         DistributionEnrollment::firstOrCreate(
-                            ['ayuda_program_id' => $program->id, 'civil_registry_id' => $b->civil_registry_id],
+                            [
+                                'ayuda_program_id' => $program->id,
+                                'civil_registry_id' => $crn,
+                            ],
                             [
                                 'beneficiary_id' => $b->id,
-                                'household_no' => $b->household_no,
+                                'household_no' => $b->household_no ?? 'N/A',
                                 'status' => DistributionStatus::PENDING,
                                 'enrolled_at' => now(),
                             ]
                         );
+                        $enrolledCount++;
                     }
-                } catch (\Throwable) {
+                } catch (\Throwable $e) {
+                    Log::error('Auto-enroll beneficiaries error: '.$e->getMessage());
                 }
             }
 
+            app(PerformanceCacheService::class)->clearFundingCache();
+
             $this->showProjectModal = false;
+            $this->wizardStep = 1;
+            $this->selectedBeneficiaries = [];
+            $this->newProjectTitle = '';
+            $this->newProjectBudgetCap = '';
+            $this->activeTab = 'overview';
             $this->dispatch('play-audio-success');
-            $this->dispatch('toast', type: 'success', message: "Created Ayuda Project {$program->program_code} with budget cap ₱".number_format($program->budget_cap, 2));
-        } catch (Exception $e) {
+            $this->dispatch('toast', type: 'success', message: "Created Ayuda Project {$program->program_code} with {$enrolledCount} enrolled beneficiaries.");
+        } catch (\Throwable $e) {
+            Log::error('Create project error: '.$e->getMessage());
             $this->dispatch('play-audio-error');
             $this->dispatch('toast', type: 'error', message: $e->getMessage());
         }
@@ -622,8 +784,10 @@ class Workspace extends Component
         $this->showReallocationModal = true;
     }
 
-    public function executeReallocation(BudgetLedgerService $budgetService): void
+    public function executeReallocation(?BudgetLedgerService $budgetService = null): void
     {
+        $budgetService ??= app(BudgetLedgerService::class);
+
         if (! $this->reallocatingProgramId) {
             return;
         }
@@ -631,6 +795,7 @@ class Workspace extends Component
         $program = AyudaProgram::find($this->reallocatingProgramId);
         if ($program) {
             $budgetService->reallocateEarmark($program);
+            app(PerformanceCacheService::class)->clearFundingCache();
             $this->dispatch('play-audio-success');
             $this->dispatch('toast', type: 'success', message: "Unspent funds from {$program->program_code} reallocated back to funding source.");
         }
@@ -640,38 +805,42 @@ class Workspace extends Component
     }
 
     public function syncGgms(
-        GgmsBudgetSyncService $budgetSync,
-        GgmsProjectSyncService $projectSync
+        ?GgmsBudgetSyncService $budgetSync = null,
+        ?GgmsProjectSyncService $projectSync = null
     ): void {
+        $budgetSync ??= app(GgmsBudgetSyncService::class);
+        $projectSync ??= app(GgmsProjectSyncService::class);
+
         try {
             $budgetSync->syncOfficeBudget('OFF-2026-0006');
             $count = $projectSync->syncProjects('OFF-2026-0006');
+            app(PerformanceCacheService::class)->clearFundingCache();
 
             $this->dispatch('play-audio-success');
             $this->dispatch('toast', type: 'success', message: "GGMS synchronized: General Office Fund updated and {$count} Sub-Project Envelopes refreshed.");
-        } catch (\Throwable $e) {
+        } catch (\Throwable) {
             $this->dispatch('play-audio-error');
-            $this->dispatch('toast', type: 'error', message: "GGMS Sync Failed: {$e->getMessage()}");
+            $this->dispatch('toast', type: 'error', message: 'GGMS Sync Failed');
         }
     }
 
     // ------------------------------------------
     // RENDER
     // ------------------------------------------
-    public function render()
+    public function render(PerformanceCacheService $cacheService)
     {
         // 1. Financial Overview Aggregates
         $fundingSources = FundingSource::withCount('ayudaPrograms')->latest()->get();
         $govSources = $fundingSources->where('funding_type', FundingType::Government);
         $privateSources = $fundingSources->where('funding_type', FundingType::Private);
 
-        $govAllocated = $govSources->sum('allocated_amount');
-        $govSpent = $govSources->sum('spent_amount');
-        $govBalance = $govSources->sum('remaining_balance');
+        $govAllocated = (float) $govSources->sum('allocated_amount');
+        $govSpent = (float) $govSources->sum('spent_amount');
+        $govBalance = (float) $govSources->sum('remaining_balance');
 
-        $privateAllocated = $privateSources->sum('allocated_amount');
-        $privateSpent = $privateSources->sum('spent_amount');
-        $privateBalance = $privateSources->sum('remaining_balance');
+        $privateAllocated = (float) $privateSources->sum('allocated_amount');
+        $privateSpent = (float) $privateSources->sum('spent_amount');
+        $privateBalance = (float) $privateSources->sum('remaining_balance');
 
         $totalAllocated = $govAllocated + $privateAllocated;
         $totalDisbursed = $govSpent + $privateSpent;
@@ -795,21 +964,8 @@ class Workspace extends Component
         // 5. GGMS Project Caches
         $ggmsCaches = GgmsProjectCache::latest()->get();
 
-        // 6. Barangay List
-        try {
-            $barangays = DB::connection('crs')->table('barangays')->orderBy('name')->pluck('name')->toArray();
-        } catch (\Throwable) {
-            $barangays = GgmsConsolidatedTransaction::distinct()->whereNotNull('barangay')->where('barangay', '!=', '')->orderBy('barangay')->pluck('barangay')->toArray();
-        }
-
-        if (empty($barangays)) {
-            $barangays = [
-                'Balasinon', 'Buguis', 'Carre', 'Clib', 'Harada Yano', 'Ibo', 'Inayagan',
-                'Kiblagon', 'Labon', 'Lapediche', 'Luparan', 'Mckinley', 'New Cebu',
-                'Osmeña', 'Palili', 'Parame', 'Poblacion', 'Roxas', 'Solongvale',
-                'Tagolilong', 'Tala-o', 'Talas', 'Tanwalang', 'Waterfall',
-            ];
-        }
+        // 6. Cached Barangay List
+        $barangays = $cacheService->getBarangays();
 
         // 7. Step 4 Candidate Pool (Capped at 200 server-side)
         $candidates = collect();

@@ -11,8 +11,8 @@ use App\Models\DistributionEnrollment;
 use App\Services\DigitalIdVerificationService;
 use App\Services\DistributionReleaseService;
 use App\Services\HouseholdVerificationService;
+use App\Services\PerformanceCacheService;
 use Exception;
-use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -209,10 +209,12 @@ class Workspace extends Component
                 'timestamp' => now()->format('h:i:s A'),
             ];
 
-            $this->showSuccessOverlay = true;
-            $this->isScannerLocked = true;
+            app(PerformanceCacheService::class)->clearFundingCache();
+
+            $this->showSuccessOverlay = false;
+            $this->isScannerLocked = false;
             $this->dispatch('play-audio-success');
-            $this->dispatch('toast', type: 'success', message: "Claim {$result['claim']->claim_code} successfully disbursed!");
+            $this->dispatch('toast', type: 'success', message: 'Disbursed ₱'.number_format($result['claim']->unit_amount, 2)." to {$beneficiary->full_name} ({$result['claim']->claim_code})");
         } catch (Exception $e) {
             $this->dispatch('play-audio-error');
             $this->dispatch('toast', type: 'error', message: $e->getMessage());
@@ -255,34 +257,99 @@ class Workspace extends Component
 
     public function enrollBeneficiary(int $beneficiaryId): void
     {
+        $this->addBeneficiaryToProject($beneficiaryId);
+    }
+
+    public function addBeneficiaryToProject(int $beneficiaryId): void
+    {
         if (! $this->selectedProjectId) {
             return;
         }
 
-        $exists = DistributionEnrollment::where('ayuda_program_id', $this->selectedProjectId)
-            ->where('beneficiary_id', $beneficiaryId)
+        $program = AyudaProgram::find($this->selectedProjectId);
+        $beneficiary = Beneficiary::find($beneficiaryId);
+
+        if (! $program || ! $beneficiary) {
+            return;
+        }
+
+        // Check if already enrolled
+        $exists = DistributionEnrollment::where('ayuda_program_id', $program->id)
+            ->where('beneficiary_id', $beneficiary->id)
             ->exists();
 
         if ($exists) {
-            $this->dispatch('toast', type: 'warning', message: 'Beneficiary already enrolled in this project.');
+            $this->dispatch('toast', type: 'error', message: "Beneficiary {$beneficiary->full_name} is already enrolled in this project.");
 
             return;
         }
 
         DistributionEnrollment::create([
-            'ayuda_program_id' => $this->selectedProjectId,
-            'beneficiary_id' => $beneficiaryId,
+            'ayuda_program_id' => $program->id,
+            'beneficiary_id' => $beneficiary->id,
+            'civil_registry_id' => $beneficiary->civil_registry_id ?: $beneficiary->civilregistry_id ?: $beneficiary->beneficiary_id,
+            'household_no' => $beneficiary->household_no,
             'status' => DistributionStatus::PENDING,
             'enrolled_at' => now(),
         ]);
 
-        $this->dispatch('toast', type: 'success', message: 'Beneficiary added to Pending queue.');
+        $this->dispatch('play-audio-success');
+        $this->dispatch('toast', type: 'success', message: "Added {$beneficiary->full_name} to {$program->program_code} distribution queue.");
+        $this->closeBeneficiaryPicker();
     }
 
-    public function render()
+    public function autoEnrollBeneficiariesForProject(): void
     {
-        $activeProjects = AyudaProgram::where('status', ProgramStatus::Active)->latest()->get();
-        $currentProject = $this->selectedProjectId ? AyudaProgram::with('fundingSource')->find($this->selectedProjectId) : null;
+        if (! $this->selectedProjectId) {
+            return;
+        }
+
+        $program = AyudaProgram::find($this->selectedProjectId);
+        if (! $program) {
+            return;
+        }
+
+        $limit = max(1, (int) ($program->target_beneficiaries ?: 50));
+        $query = Beneficiary::query();
+        if ($program->target_barangay) {
+            $query->where('address', 'like', "%{$program->target_barangay}%");
+        }
+
+        $beneficiaries = $query->take($limit)->get();
+        $enrolled = 0;
+
+        foreach ($beneficiaries as $b) {
+            $crn = $b->civil_registry_id ?: $b->civilregistry_id ?: $b->beneficiary_id ?: "CRN-{$b->id}";
+            $record = DistributionEnrollment::firstOrCreate(
+                [
+                    'ayuda_program_id' => $program->id,
+                    'civil_registry_id' => $crn,
+                ],
+                [
+                    'beneficiary_id' => $b->id,
+                    'household_no' => $b->household_no ?? 'N/A',
+                    'status' => DistributionStatus::PENDING,
+                    'enrolled_at' => now(),
+                ]
+            );
+            if ($record->wasRecentlyCreated) {
+                $enrolled++;
+            }
+        }
+
+        $this->dispatch('play-audio-success');
+        $this->dispatch('toast', type: 'success', message: "Enlisted {$enrolled} beneficiaries into {$program->program_code} distribution queue.");
+    }
+
+    public function render(PerformanceCacheService $cacheService)
+    {
+        $activeProjects = AyudaProgram::where('status', ProgramStatus::Active)
+            ->orderBy('title')
+            ->get();
+
+        $currentProject = $this->selectedProjectId
+            ? AyudaProgram::with('fundingSource')->find($this->selectedProjectId)
+            : null;
 
         // 3-Bucket Query Sets (Independently Paginated)
         $pendingQuery = DistributionEnrollment::with('beneficiary')
@@ -347,20 +414,7 @@ class Workspace extends Component
             }
         }
 
-        try {
-            $barangays = DB::connection('crs')->table('barangays')->orderBy('name')->pluck('name')->toArray();
-        } catch (\Throwable) {
-            $barangays = GgmsConsolidatedTransaction::distinct()->whereNotNull('barangay')->where('barangay', '!=', '')->orderBy('barangay')->pluck('barangay')->toArray();
-        }
-
-        if (empty($barangays)) {
-            $barangays = [
-                'Balasinon', 'Buguis', 'Carre', 'Clib', 'Harada Yano', 'Ibo', 'Inayagan',
-                'Kiblagon', 'Labon', 'Lapediche', 'Luparan', 'Mckinley', 'New Cebu',
-                'Osmeña', 'Palili', 'Parame', 'Poblacion', 'Roxas', 'Solongvale',
-                'Tagolilong', 'Tala-o', 'Talas', 'Tanwalang', 'Waterfall',
-            ];
-        }
+        $barangays = $cacheService->getBarangays();
 
         return view('livewire.distribution.workspace', [
             'activeProjects' => $activeProjects,

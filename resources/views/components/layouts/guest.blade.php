@@ -3,7 +3,10 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ $title ?? config('app.name', 'eKalinga+') }} - Municipality of Sulop</title>
+    <title>{{ $title ?? (App\Models\Setting::get('system_name', 'eKalinga+')) }} - {{ App\Models\Setting::get('municipality_name', 'Municipality of Sulop') }}</title>
+    
+    <!-- Favicon Icon -->
+    <link rel="icon" type="image/x-icon" href="{{ asset(App\Models\Setting::get('favicon_url', '/images/Site_logo.png')) }}">
     
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">

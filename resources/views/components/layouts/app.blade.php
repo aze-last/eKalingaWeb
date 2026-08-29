@@ -3,7 +3,10 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ $title ?? 'eKalinga+' }} - Municipality of Sulop Ayuda System</title>
+    <title>{{ $title ?? (App\Models\Setting::get('system_name', 'eKalinga+')) }} - {{ App\Models\Setting::get('municipality_name', 'Municipality of Sulop') }}</title>
+    
+    <!-- Favicon Icon -->
+    <link rel="icon" type="image/x-icon" href="{{ asset(App\Models\Setting::get('favicon_url', '/images/Site_logo.png')) }}">
     
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -169,6 +172,33 @@
                         </nav>
                     </div>
 
+                    @if(Auth::user()?->isSuperAdmin())
+                        <div>
+                            <p class="px-3 text-[11px] font-bold uppercase tracking-wider text-brand mb-2">System Administration</p>
+                            <nav class="space-y-1">
+                                <!-- User Management -->
+                                <a 
+                                    href="{{ route('users.index') }}" 
+                                    wire:navigate 
+                                    class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors cursor-pointer {{ request()->routeIs('users*') ? 'bg-brand/10 text-brand font-bold' : 'text-slate-700 hover:bg-slate-100 hover:text-neutral-strong' }}"
+                                >
+                                    <svg class="w-5 h-5 shrink-0 {{ request()->routeIs('users*') ? 'text-brand' : 'text-slate-500' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+                                    <span>User Management</span>
+                                </a>
+
+                                <!-- System Profile & Branding -->
+                                <a 
+                                    href="{{ route('settings.profile') }}" 
+                                    wire:navigate 
+                                    class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors cursor-pointer {{ request()->routeIs('settings.profile') ? 'bg-brand/10 text-brand font-bold' : 'text-slate-700 hover:bg-slate-100 hover:text-neutral-strong' }}"
+                                >
+                                    <svg class="w-5 h-5 shrink-0 {{ request()->routeIs('settings.profile') ? 'text-brand' : 'text-slate-500' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                                    <span>System Profile</span>
+                                </a>
+                            </nav>
+                        </div>
+                    @endif
+
                     <!-- Quick Primary Actions (Amber Fills with Dark Text) -->
                     <div class="pt-2 border-t border-slate-200">
                         <a 
@@ -185,19 +215,28 @@
 
             <!-- User Footer & Logout -->
             <div class="p-4 border-t border-slate-200 bg-white">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-3 min-w-0">
-                        <div class="w-9 h-9 rounded-lg bg-brand flex items-center justify-center font-bold text-white text-xs shrink-0 shadow-xs">
-                            {{ substr(Auth::user()->name ?? 'AD', 0, 2) }}
-                        </div>
-                        <div class="truncate">
-                            <p class="text-xs font-bold text-neutral-strong truncate">{{ Auth::user()->name ?? 'Administrator' }}</p>
-                            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-brand border border-emerald-200">
+                <div class="flex items-center justify-between gap-2">
+                    <a 
+                        href="{{ route('profile.index') }}" 
+                        wire:navigate 
+                        title="View My Account"
+                        class="flex items-center gap-3 min-w-0 flex-1 p-1.5 -m-1.5 rounded-xl hover:bg-slate-50 transition-colors cursor-pointer group"
+                    >
+                        @if (Auth::user()?->avatar_url)
+                            <img src="{{ asset(Auth::user()->avatar_url) }}" alt="Avatar" class="w-9 h-9 rounded-lg object-cover border border-slate-200 shrink-0 shadow-2xs group-hover:border-brand transition-colors">
+                        @else
+                            <div class="w-9 h-9 rounded-lg {{ Auth::user()?->isSuperAdmin() ? 'bg-brand' : 'bg-slate-700' }} flex items-center justify-center font-bold text-white text-xs shrink-0 shadow-xs group-hover:ring-2 group-hover:ring-brand/20 transition-all">
+                                {{ substr(Auth::user()->name ?? 'AD', 0, 2) }}
+                            </div>
+                        @endif
+                        <div class="truncate flex-1">
+                            <p class="text-xs font-bold text-neutral-strong truncate group-hover:text-brand transition-colors">{{ Auth::user()->name ?? 'Administrator' }}</p>
+                            <span class="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-semibold bg-emerald-50 text-brand border border-emerald-200">
                                 {{ Auth::user()->role->value ?? 'Admin' }}
                             </span>
                         </div>
-                    </div>
-                    <form method="POST" action="{{ route('logout') }}">
+                    </a>
+                    <form method="POST" action="{{ route('logout') }}" class="shrink-0">
                         @csrf
                         <button type="submit" title="Sign Out" class="p-2 text-slate-400 hover:text-error hover:bg-rose-50 rounded-lg transition-colors cursor-pointer">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
@@ -241,12 +280,100 @@
                 </div>
             </header>
 
+            <!-- Mandatory Password Change Top Banner (when outside of My Account) -->
+            @if (Auth::user()?->must_change_password && ! request()->routeIs('profile.index'))
+                <div class="bg-amber-500 text-neutral-strong px-[30px] py-2.5 flex items-center justify-between gap-4 font-bold text-xs shadow-xs shrink-0">
+                    <div class="flex items-center gap-2">
+                        <svg class="w-4 h-4 text-neutral-strong shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                        <span>Security Alert: Your password was reset by an administrator. Please set a new password now.</span>
+                    </div>
+                    <a 
+                        href="{{ route('profile.index') }}" 
+                        wire:navigate 
+                        class="bg-neutral-strong hover:bg-slate-800 text-white font-black text-[11px] py-1 px-3 rounded-lg uppercase tracking-wider transition-colors shrink-0 shadow-2xs cursor-pointer"
+                    >
+                        Change Password
+                    </a>
+                </div>
+            @endif
+
             <!-- Scrollable Content Body with Standardized p-[30px] -->
             <div class="flex-1 overflow-y-auto p-[30px] bg-page-bg">
                 {{ $slot }}
             </div>
         </main>
     </div>
+
+    <!-- Mandatory Password Reset Security Dialog Modal -->
+    @if (Auth::user()?->must_change_password && ! request()->routeIs('profile.index'))
+        <div 
+            x-data="{ showNotice: true }" 
+            x-show="showNotice" 
+            x-cloak
+            class="fixed inset-0 z-50 overflow-y-auto"
+            aria-labelledby="password-reset-notice-title" 
+            role="dialog" 
+            aria-modal="true"
+        >
+            <div 
+                x-show="showNotice"
+                x-transition:enter="ease-out duration-200"
+                x-transition:enter-start="opacity-0"
+                x-transition:enter-end="opacity-100"
+                class="fixed inset-0 bg-[#0F172A]/80 backdrop-blur-md transition-opacity"
+            ></div>
+
+            <div class="flex min-h-screen items-center justify-center p-4 text-center sm:p-0">
+                <div 
+                    x-show="showNotice"
+                    x-transition:enter="ease-out duration-200"
+                    x-transition:enter-start="opacity-0 scale-95"
+                    x-transition:enter-end="opacity-100 scale-100"
+                    class="relative transform overflow-hidden rounded-2xl bg-white text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-md border border-amber-300 p-6"
+                >
+                    <div class="flex items-center gap-3.5 pb-3 border-b border-slate-100">
+                        <div class="w-11 h-11 rounded-xl bg-amber-100 border border-amber-300 flex items-center justify-center text-amber-900 shrink-0">
+                            <svg class="w-6 h-6 text-amber-900 stroke-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                        </div>
+                        <div>
+                            <h3 class="text-base font-black text-neutral-strong tracking-tight" id="password-reset-notice-title">
+                                Temporary Password Notice
+                            </h3>
+                            <p class="text-xs text-amber-900 font-bold">Password Change Required</p>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 space-y-3">
+                        <p class="text-xs text-slate-600 leading-relaxed">
+                            A <span class="font-bold text-neutral-strong">Super Administrator</span> recently reset the password for your account. You are currently operating with a temporary password.
+                        </p>
+                        <div class="p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900">
+                            <p class="font-bold">Security Safeguard:</p>
+                            <p class="text-[11px] text-amber-800 mt-0.5">Please update to a secure, private password in your account settings before continuing municipal duties.</p>
+                        </div>
+                    </div>
+
+                    <div class="mt-6 flex items-center justify-end gap-2">
+                        <button 
+                            type="button" 
+                            @click="showNotice = false" 
+                            class="px-4 py-2 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-100 transition-colors cursor-pointer"
+                        >
+                            Remind Me Later
+                        </button>
+                        <a 
+                            href="{{ route('profile.index') }}" 
+                            wire:navigate 
+                            class="bg-accent hover:bg-amber-400 text-neutral-strong font-bold text-xs py-2 px-5 rounded-xl tracking-wider uppercase transition-colors shadow-xs flex items-center gap-2 cursor-pointer"
+                        >
+                            <span>Change Password Now</span>
+                            <svg class="w-4 h-4 text-neutral-strong" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
 
     @livewireScripts
     

@@ -6,6 +6,7 @@ use App\Models\ActivityLog;
 use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Request;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
@@ -27,7 +28,17 @@ class Login extends Component
 
     public string $provinceName = '';
 
+    public string $countryName = '';
+
     public string $municipalAddress = '';
+
+    public string $tagline = '';
+
+    public string $systemName = '';
+
+    public string $systemSubtitle = '';
+
+    public ?string $loginBgUrl = null;
 
     public string $systemSerial = '';
 
@@ -42,7 +53,12 @@ class Login extends Component
         $this->municipalLogo = Setting::get('municipal_seal_url', '/images/Site_logo.png');
         $this->municipalityName = Setting::get('municipality_name', 'Municipality of Sulop');
         $this->provinceName = Setting::get('province_name', 'Province of Davao del Sur');
-        $this->municipalAddress = Setting::get('municipal_address', 'Purok 1, Poblacion, Sulop, Davao del Sur');
+        $this->countryName = Setting::get('country_name', 'Republic of the Philippines');
+        $this->municipalAddress = Setting::get('municipal_address', 'Sulop Digos City Davao Del Sur');
+        $this->tagline = Setting::get('tagline', 'Better Service, Better Care');
+        $this->systemName = Setting::get('system_name', 'eKalinga+');
+        $this->systemSubtitle = Setting::get('system_subtitle', 'Ayuda Management System');
+        $this->loginBgUrl = Setting::get('login_bg_url');
         $this->systemSerial = Setting::get('system_serial', 'AMS-SULOP-2026-X1');
         $this->isLocalEnvironment = app()->environment('local', 'testing');
     }
@@ -57,21 +73,24 @@ class Login extends Component
             'password.required' => 'Enter your password.',
         ]);
 
-        $fieldType = filter_var($this->login, FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
+        $loginInput = trim($this->login);
 
-        if (Auth::attempt([$fieldType => $this->login, 'password' => $this->password], $this->remember)) {
-            session()->regenerate();
+        // Case-insensitive lookup by username or email
+        $user = User::where(function ($q) use ($loginInput) {
+            $q->whereRaw('LOWER(username) = ?', [strtolower($loginInput)])
+                ->orWhereRaw('LOWER(email) = ?', [strtolower($loginInput)]);
+        })->first();
 
-            /** @var User $user */
-            $user = Auth::user();
-
+        if ($user && Hash::check($this->password, $user->password)) {
             if (! $user->is_active) {
-                Auth::logout();
                 $this->password = '';
                 $this->addError('login', 'Your account has been deactivated. Please contact the administrator.');
 
                 return;
             }
+
+            Auth::login($user, $this->remember);
+            session()->regenerate();
 
             $user->update(['last_login_at' => now()]);
 

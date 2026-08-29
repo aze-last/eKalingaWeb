@@ -4,7 +4,7 @@
         <div>
             <div class="flex items-center gap-2.5">
                 <h1 class="text-2xl font-bold text-brand tracking-tight">Budget & Funding Management</h1>
-                <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-brand border border-emerald-200">
+                <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-brand border border-emerald-200" title="Synchronized live ledger and verified civil registry">
                     Live Ledger & Registry
                 </span>
             </div>
@@ -16,6 +16,7 @@
             <button 
                 wire:click="openDonationModal"
                 class="px-3.5 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-xs font-bold text-neutral-strong border border-slate-200 transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs"
+                title="Record a private cash or in-kind goods donation into the municipal pool"
             >
                 <svg class="w-4 h-4 text-brand" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                 <span>Record Donation</span>
@@ -23,6 +24,7 @@
             <button 
                 wire:click="openProjectModal"
                 class="px-4 py-2 rounded-lg bg-accent hover:bg-amber-400 text-xs font-bold text-neutral-strong transition-colors shadow-xs flex items-center gap-1.5 cursor-pointer uppercase tracking-wide"
+                title="Launch 4-step wizard to create an operational ayuda distribution project with 1:1 funding"
             >
                 <svg class="w-4 h-4 text-neutral-strong" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
                 <span>Create Ayuda Project</span>
@@ -34,6 +36,7 @@
     <div class="flex border-b border-slate-200 gap-6 text-sm font-semibold">
         <button 
             wire:click="$set('activeTab', 'overview')"
+            title="View high-level fiscal KPI summary, funding sources, and active projects"
             class="pb-3 flex items-center gap-2 transition-colors cursor-pointer border-b-2 {{ $activeTab === 'overview' ? 'border-brand text-brand font-bold' : 'border-transparent text-slate-500 hover:text-neutral-strong' }}"
         >
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
@@ -42,6 +45,7 @@
 
         <button 
             wire:click="$set('activeTab', 'registry')"
+            title="Search and inspect all government allocations, GGMS projects, private donations, and local programs"
             class="pb-3 flex items-center gap-2 transition-colors cursor-pointer border-b-2 {{ $activeTab === 'registry' ? 'border-brand text-brand font-bold' : 'border-transparent text-slate-500 hover:text-neutral-strong' }}"
         >
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
@@ -50,6 +54,7 @@
 
         <button 
             wire:click="$set('activeTab', 'ledger')"
+            title="Inspect immutable double-entry transaction log and historical audit trail"
             class="pb-3 flex items-center gap-2 transition-colors cursor-pointer border-b-2 {{ $activeTab === 'ledger' ? 'border-brand text-brand font-bold' : 'border-transparent text-slate-500 hover:text-neutral-strong' }}"
         >
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
@@ -58,6 +63,7 @@
 
         <button 
             wire:click="$set('activeTab', 'ggms_sync')"
+            title="View and synchronize mirrored central government GGMS fund allocations"
             class="pb-3 flex items-center gap-2 transition-colors cursor-pointer border-b-2 {{ $activeTab === 'ggms_sync' ? 'border-brand text-brand font-bold' : 'border-transparent text-slate-500 hover:text-neutral-strong' }}"
         >
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
@@ -138,7 +144,11 @@
                     <h3 class="text-base font-bold text-neutral-strong tracking-tight">Ayuda Projects (Operational Distributions)</h3>
                     <p class="text-xs text-slate-500 mt-0.5">Projects created in Budget and disbursed via POS Scanner</p>
                 </div>
-                <button wire:click="openProjectModal" class="text-xs text-brand hover:underline font-bold cursor-pointer">
+                <button 
+                    wire:click="openProjectModal" 
+                    class="text-xs text-brand hover:underline font-bold cursor-pointer"
+                    title="Launch wizard to create a new ayuda distribution project"
+                >
                     + New Project
                 </button>
             </div>
@@ -181,6 +191,7 @@
                                         <button 
                                             wire:click="confirmReallocation({{ $program->id }})"
                                             class="px-2.5 py-1 rounded bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 text-[11px] font-bold cursor-pointer transition-colors"
+                                            title="Reclaim remaining unspent earmark funds back to parent funding source and close project"
                                         >
                                             Reallocate
                                         </button>
@@ -212,6 +223,7 @@
                         wire:model.live.debounce.250ms="registrySearch" 
                         placeholder="Search code, title, donor..." 
                         class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs text-neutral-strong focus:ring-1 focus:ring-brand"
+                        title="Filter registry records by code, title, office, or donor particulars"
                     >
                 </div>
             </div>
@@ -221,30 +233,35 @@
                 <button 
                     wire:click="$set('registryCategory', 'ALL')"
                     class="px-3 py-1.5 rounded-md transition-all cursor-pointer {{ $registryCategory === 'ALL' ? 'bg-white text-brand shadow-xs' : 'text-slate-600 hover:text-neutral-strong' }}"
+                    title="Show all registered government funds, GGMS projects, private donations, and local programs"
                 >
                     All Categories ({{ $registryItems->count() }})
                 </button>
                 <button 
                     wire:click="$set('registryCategory', 'GOV_FUND')"
                     class="px-3 py-1.5 rounded-md transition-all cursor-pointer {{ $registryCategory === 'GOV_FUND' ? 'bg-white text-brand shadow-xs' : 'text-slate-600 hover:text-neutral-strong' }}"
+                    title="Filter view to government appropriations and funding sources"
                 >
                     Government Funds
                 </button>
                 <button 
                     wire:click="$set('registryCategory', 'GGMS_PROJECT')"
                     class="px-3 py-1.5 rounded-md transition-all cursor-pointer {{ $registryCategory === 'GGMS_PROJECT' ? 'bg-white text-brand shadow-xs' : 'text-slate-600 hover:text-neutral-strong' }}"
+                    title="Filter view to centralized GGMS sub-projects"
                 >
                     GGMS Projects
                 </button>
                 <button 
                     wire:click="$set('registryCategory', 'PRIVATE_DONATION')"
                     class="px-3 py-1.5 rounded-md transition-all cursor-pointer {{ $registryCategory === 'PRIVATE_DONATION' ? 'bg-white text-brand shadow-xs' : 'text-slate-600 hover:text-neutral-strong' }}"
+                    title="Filter view to private cash and in-kind donor contributions"
                 >
                     Private Donations
                 </button>
                 <button 
                     wire:click="$set('registryCategory', 'DISTRIBUTION_PROJECT')"
                     class="px-3 py-1.5 rounded-md transition-all cursor-pointer {{ $registryCategory === 'DISTRIBUTION_PROJECT' ? 'bg-white text-brand shadow-xs' : 'text-slate-600 hover:text-neutral-strong' }}"
+                    title="Filter view to municipal operational ayuda distribution programs"
                 >
                     Distribution Projects
                 </button>
@@ -269,12 +286,13 @@
                             <tr 
                                 wire:click="openRegistryInspector('{{ $item['category'] }}', '{{ $item['id'] }}')"
                                 class="hover:bg-slate-50/80 transition-colors cursor-pointer group"
+                                title="Click to inspect full details and allocations for {{ $item['title'] }}"
                             >
                                 <td class="px-4 py-3.5">
                                     @php
                                         $catColor = match($item['category']) {
                                             'Government Fund' => 'bg-emerald-50 text-brand border-emerald-200',
-                                            'GGMS Project' => 'bg-blue-50 text-blue-700 border-blue-200',
+                                             'GGMS Project' => 'bg-blue-50 text-blue-700 border-blue-200',
                                             'Private Donation' => 'bg-amber-50 text-amber-800 border-amber-200',
                                             'Distribution Project' => 'bg-indigo-50 text-indigo-700 border-indigo-200',
                                             default => 'bg-slate-100 text-slate-700 border-slate-200',
@@ -286,7 +304,7 @@
                                 </td>
                                 <td class="px-4 py-3.5">
                                     <p class="font-bold text-neutral-strong group-hover:text-brand">{{ $item['title'] }}</p>
-                                    <p class="text-[11px] text-slate-500">{{ $item['detail_summary'] }}</p>
+                                    <p class="text-[11px] text-slate-500"><span class="font-mono font-bold text-brand">{{ $item['code'] }}</span> • {{ $item['detail_summary'] }}</p>
                                 </td>
                                 <td class="px-4 py-3.5 text-right font-mono font-bold text-neutral-strong">
                                     ₱{{ number_format($item['allocated'], 2) }}
@@ -303,7 +321,10 @@
                                     </span>
                                 </td>
                                 <td class="px-4 py-3.5 text-right">
-                                    <button class="text-xs text-brand font-bold group-hover:underline flex items-center justify-end gap-1 ml-auto">
+                                    <button 
+                                        class="text-xs text-brand font-bold group-hover:underline flex items-center justify-end gap-1 ml-auto"
+                                        title="Inspect detailed specifications and financial record"
+                                    >
                                         <span>Inspect</span>
                                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
                                     </button>
@@ -337,8 +358,13 @@
                         wire:model.live.debounce.250ms="ledgerSearch" 
                         placeholder="Search ref, notes..." 
                         class="bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-xs text-neutral-strong"
+                        title="Filter ledger entries by reference code, notes, or program"
                     >
-                    <select wire:model.live="ledgerFilterType" class="bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-xs text-neutral-strong">
+                    <select 
+                        wire:model.live="ledgerFilterType" 
+                        class="bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-xs text-neutral-strong cursor-pointer"
+                        title="Filter audit log by transaction event type"
+                    >
                         <option value="ALL">All Event Types</option>
                         <option value="ALLOCATION">Allocation</option>
                         <option value="DONATION">Donation</option>
@@ -419,10 +445,15 @@
                 </div>
                 <button 
                     wire:click="syncGgms"
-                    class="px-3 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-brand border border-emerald-200 text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5"
+                    wire:loading.attr="disabled"
+                    wire:target="syncGgms"
+                    class="px-3 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-brand border border-emerald-200 text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5 disabled:opacity-75"
+                    title="Fetch and synchronize live government grant allocations from central GGMS database"
                 >
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-                    <span>Sync Grants Now</span>
+                    <svg wire:loading.remove wire:target="syncGgms" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                    <svg wire:loading wire:target="syncGgms" class="animate-spin w-3.5 h-3.5 text-brand" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+                    <span wire:loading.remove wire:target="syncGgms">Sync Grants Now</span>
+                    <span wire:loading wire:target="syncGgms">Synchronizing GGMS...</span>
                 </button>
             </div>
 
@@ -466,7 +497,11 @@
                                 </span>
                                 <h3 class="text-base font-bold text-neutral-strong mt-1.5">{{ $inspectingRecord['title'] }}</h3>
                             </div>
-                            <button wire:click="closeRegistryInspector" class="text-slate-400 hover:text-neutral-strong text-xl font-bold cursor-pointer">&times;</button>
+                            <button 
+                                wire:click="closeRegistryInspector" 
+                                class="text-slate-400 hover:text-neutral-strong text-xl font-bold cursor-pointer"
+                                title="Close registry inspector drawer"
+                            >&times;</button>
                         </div>
 
                         <!-- Financial Metric Card -->
@@ -514,6 +549,7 @@
                         <button 
                             wire:click="closeRegistryInspector"
                             class="w-full py-2.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs cursor-pointer transition-colors"
+                            title="Dismiss inspector and return to registry table"
                         >
                             Close Inspector
                         </button>
@@ -532,7 +568,11 @@
         <div class="w-full max-w-lg bg-white border border-slate-200 rounded-2xl shadow-xl p-6 space-y-4 text-neutral-strong">
             <div class="flex items-center justify-between border-b border-slate-100 pb-3">
                 <h3 class="text-base font-bold text-brand">Record Private Donation</h3>
-                <button wire:click="closeDonationModal" class="text-slate-400 hover:text-neutral-strong text-xl font-bold cursor-pointer">&times;</button>
+                <button 
+                    wire:click="closeDonationModal" 
+                    class="text-slate-400 hover:text-neutral-strong text-xl font-bold cursor-pointer"
+                    title="Close donation window without saving"
+                >&times;</button>
             </div>
 
             <form wire:submit="saveDonation" class="space-y-4 text-xs">
@@ -540,11 +580,17 @@
                 <div>
                     <label class="block font-bold uppercase tracking-wider text-slate-500 mb-1.5">Donation Type</label>
                     <div class="grid grid-cols-2 gap-2">
-                        <label class="flex items-center justify-center p-2.5 rounded-lg border cursor-pointer font-bold transition-all {{ $donationType === 'Cash' ? 'bg-emerald-50 border-brand text-brand shadow-xs' : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100' }}">
+                        <label 
+                            class="flex items-center justify-center p-2.5 rounded-lg border cursor-pointer font-bold transition-all {{ $donationType === 'Cash' ? 'bg-emerald-50 border-brand text-brand shadow-xs' : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100' }}"
+                            title="Select for monetary cash donation in Philippine Peso (₱)"
+                        >
                             <input type="radio" wire:model.live="donationType" value="Cash" class="hidden">
                             <span>Cash Donation (₱)</span>
                         </label>
-                        <label class="flex items-center justify-center p-2.5 rounded-lg border cursor-pointer font-bold transition-all {{ $donationType === 'Goods' ? 'bg-emerald-50 border-brand text-brand shadow-xs' : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100' }}">
+                        <label 
+                            class="flex items-center justify-center p-2.5 rounded-lg border cursor-pointer font-bold transition-all {{ $donationType === 'Goods' ? 'bg-emerald-50 border-brand text-brand shadow-xs' : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100' }}"
+                            title="Select for physical supplies, relief goods, or equipment"
+                        >
                             <input type="radio" wire:model.live="donationType" value="Goods" class="hidden">
                             <span>Goods / In-Kind</span>
                         </label>
@@ -555,7 +601,7 @@
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block font-bold text-slate-600 mb-1">Donor Type</label>
-                        <select wire:model="donorType" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-neutral-strong">
+                        <select wire:model="donorType" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-neutral-strong" title="Select whether donor is an organization or individual">
                             <option value="Organization">Organization / Foundation</option>
                             <option value="Person">Individual Person</option>
                         </select>
@@ -607,18 +653,34 @@
                 </div>
 
                 <div class="flex justify-end gap-2 pt-3 border-t border-slate-100">
-                    <button type="button" wire:click="closeDonationModal" class="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold cursor-pointer">Cancel</button>
-                    <button type="submit" class="px-4 py-2 rounded-lg bg-brand hover:bg-emerald-700 text-white font-bold cursor-pointer">Post Donation to Ledger</button>
+                    <button 
+                        type="button" 
+                        wire:click="closeDonationModal" 
+                        class="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold cursor-pointer"
+                        title="Discard entries and close form"
+                    >
+                        Cancel
+                    </button>
+                    <button 
+                        type="submit" 
+                        wire:loading.attr="disabled"
+                        wire:target="saveDonation"
+                        class="px-4 py-2 rounded-lg bg-brand hover:bg-emerald-700 text-white font-bold cursor-pointer shadow-xs flex items-center gap-1.5 disabled:opacity-75"
+                        title="Post donation to the municipal funding pool and record immutable ledger entry"
+                    >
+                        <svg wire:loading wire:target="saveDonation" class="animate-spin w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+                        <span wire:loading.remove wire:target="saveDonation">Post Donation to Ledger</span>
+                        <span wire:loading wire:target="saveDonation">Posting to Immutable Ledger...</span>
+                    </button>
                 </div>
             </form>
         </div>
     </div>
 
     <!-- MODAL 2: PROJECT CREATION 4-STEP WIZARD -->
+    @if($showProjectModal)
     <div 
-        x-show="$wire.showProjectModal"
-        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0F172A]/80 backdrop-blur-md overflow-hidden"
-        style="display: none;"
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0F172A]/80 backdrop-blur-md overflow-hidden animate-fadeIn"
     >
         <div class="w-full max-w-4xl bg-white border border-slate-200 rounded-2xl shadow-2xl p-6 text-neutral-strong max-h-[92vh] flex flex-col justify-between">
             
@@ -639,7 +701,11 @@
                         @endif
                     </p>
                 </div>
-                <button wire:click="closeProjectModal" class="text-slate-400 hover:text-neutral-strong text-xl font-bold cursor-pointer">&times;</button>
+                <button 
+                    wire:click="closeProjectModal" 
+                    class="text-slate-400 hover:text-neutral-strong text-xl font-bold cursor-pointer"
+                    title="Exit project creation wizard"
+                >&times;</button>
             </div>
 
             <!-- Step Progress Indicators -->
@@ -665,7 +731,11 @@
                     <div class="space-y-4 text-xs">
                         <div>
                             <label class="block font-bold uppercase tracking-wider text-slate-500 mb-1.5">Select 1:1 Funding Source *</label>
-                            <select wire:model.live="newProjectFundingSourceId" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-neutral-strong font-medium">
+                            <select 
+                                wire:model.live="newProjectFundingSourceId" 
+                                class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-neutral-strong font-medium"
+                                title="Choose parent source pool to fund this project 1:1"
+                            >
                                 <option value="">-- Select Source Pool --</option>
                                 @foreach($fundingSources as $source)
                                     <option value="{{ $source->id }}">
@@ -673,16 +743,53 @@
                                     </option>
                                 @endforeach
                             </select>
+                            @error('newProjectFundingSourceId') <p class="text-rose-600 font-bold text-[11px] mt-1">{{ $message }}</p> @enderror
                         </div>
+
+                        <!-- Selected Funding Source Overview Card -->
+                        @if($this->selectedFundingSource)
+                            <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-2.5 animate-fadeIn">
+                                <div class="flex items-center justify-between">
+                                    <span class="px-2 py-0.5 rounded text-[10px] font-bold {{ $this->selectedFundingSource->funding_type->value === 'Government' ? 'bg-emerald-50 text-brand border border-emerald-200' : 'bg-amber-50 text-amber-800 border border-amber-200' }}">
+                                        {{ $this->selectedFundingSource->funding_type->value }} Fund
+                                    </span>
+                                    <span class="font-mono font-bold text-[11px] text-slate-600">{{ $this->selectedFundingSource->source_code }}</span>
+                                </div>
+                                <div>
+                                    <p class="font-bold text-neutral-strong text-xs">{{ $this->selectedFundingSource->title }}</p>
+                                    <p class="text-[11px] text-slate-500">{{ $this->selectedFundingSource->office }} · FY {{ $this->selectedFundingSource->fiscal_year }}</p>
+                                </div>
+                                <div class="grid grid-cols-3 gap-2 pt-2 border-t border-slate-200/70 text-center">
+                                    <div class="p-1.5 rounded-lg bg-white border border-slate-100">
+                                        <p class="text-[10px] text-slate-400 font-bold uppercase">Allocated</p>
+                                        <p class="font-mono font-bold text-neutral-strong text-xs">₱{{ number_format($this->selectedFundingSource->allocated_amount, 2) }}</p>
+                                    </div>
+                                    <div class="p-1.5 rounded-lg bg-white border border-slate-100">
+                                        <p class="text-[10px] text-slate-400 font-bold uppercase">Disbursed</p>
+                                        <p class="font-mono font-bold text-slate-600 text-xs">₱{{ number_format($this->selectedFundingSource->spent_amount, 2) }}</p>
+                                    </div>
+                                    <div class="p-1.5 rounded-lg bg-emerald-50/80 border border-emerald-100">
+                                        <p class="text-[10px] text-brand font-bold uppercase">Available Cap</p>
+                                        <p class="font-mono font-bold text-brand text-xs">₱{{ number_format($this->selectedFundingSource->remaining_balance, 2) }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
 
                         <div>
                             <label class="block font-bold uppercase tracking-wider text-slate-500 mb-1.5">Benefit Type</label>
                             <div class="grid grid-cols-2 gap-3">
-                                <label class="flex items-center justify-center p-3 rounded-lg border cursor-pointer font-bold transition-all {{ $newProjectBenefitType === 'Cash' ? 'bg-emerald-50 border-brand text-brand shadow-xs' : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100' }}">
+                                <label 
+                                    class="flex items-center justify-center p-3 rounded-lg border cursor-pointer font-bold transition-all {{ $newProjectBenefitType === 'Cash' ? 'bg-emerald-50 border-brand text-brand shadow-xs' : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100' }}"
+                                    title="Disburse direct financial assistance in Philippine Peso (₱)"
+                                >
                                     <input type="radio" wire:model.live="newProjectBenefitType" value="Cash" class="hidden">
                                     <span>Direct Cash Assistance (₱)</span>
                                 </label>
-                                <label class="flex items-center justify-center p-3 rounded-lg border cursor-pointer font-bold transition-all {{ $newProjectBenefitType === 'Goods' ? 'bg-emerald-50 border-brand text-brand shadow-xs' : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100' }}">
+                                <label 
+                                    class="flex items-center justify-center p-3 rounded-lg border cursor-pointer font-bold transition-all {{ $newProjectBenefitType === 'Goods' ? 'bg-emerald-50 border-brand text-brand shadow-xs' : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100' }}"
+                                    title="Disburse in-kind goods, supplies, or food packs"
+                                >
                                     <input type="radio" wire:model.live="newProjectBenefitType" value="Goods" class="hidden">
                                     <span>In-Kind Goods / Supplies</span>
                                 </label>
@@ -693,22 +800,141 @@
 
                 <!-- STEP 2: PROJECT PARTICULARS -->
                 @if($wizardStep === 2)
-                    <div class="space-y-4 text-xs">
+                    @php
+                        $selectedSource = $this->selectedFundingSource;
+                        $sourceBal = (float) ($selectedSource?->remaining_balance ?? 0);
+                        $enteredCap = (float) ($newProjectBudgetCap ?: 0);
+                        $isCapExceeded = $enteredCap > $sourceBal;
+                        $calcTotal = $this->calculatedTotalCost;
+                        $capUsagePct = $sourceBal > 0 ? min(100, round(($enteredCap / $sourceBal) * 100, 1)) : 0;
+                    @endphp
+
+                    <div class="space-y-3.5 text-xs">
+                        <!-- Active Funding Source Context Banner -->
+                        @if($selectedSource)
+                            <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between text-xs">
+                                <div class="flex items-center gap-2">
+                                    <span class="px-1.5 py-0.5 rounded text-[10px] font-bold {{ $selectedSource->funding_type->value === 'Government' ? 'bg-emerald-50 text-brand border border-emerald-200' : 'bg-amber-50 text-amber-800 border border-amber-200' }}">
+                                        {{ $selectedSource->funding_type->value }}
+                                    </span>
+                                    <div>
+                                        <p class="font-bold text-neutral-strong text-[11px] leading-tight">{{ $selectedSource->title }}</p>
+                                        <p class="text-[10px] text-slate-500 font-mono">{{ $selectedSource->source_code }}</p>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-[10px] text-slate-400 font-bold uppercase">Pool Balance Limit</p>
+                                    <p class="font-mono font-black text-brand text-xs">₱{{ number_format($sourceBal, 2) }}</p>
+                                </div>
+                            </div>
+                        @endif
+
                         <div>
                             <label class="block font-bold text-slate-600 mb-1">Project Title *</label>
                             <input type="text" wire:model="newProjectTitle" placeholder="e.g. Sulop Indigent Emergency Aid 2026" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-neutral-strong font-medium">
+                            @error('newProjectTitle') <p class="text-rose-600 font-bold text-[11px] mt-1">{{ $message }}</p> @enderror
                         </div>
 
+                        <!-- Budget Cap Input with Live Listener & Max Auto-Fill -->
+                        <div>
+                            <div class="flex items-center justify-between mb-1">
+                                <label class="block font-bold text-slate-600">Budget Cap (₱) *</label>
+                                @if($sourceBal > 0)
+                                    <button 
+                                        type="button" 
+                                        wire:click="setBudgetCapToMax" 
+                                        class="text-[11px] font-bold text-brand hover:underline cursor-pointer flex items-center gap-1"
+                                        title="Auto-fill with maximum available pool balance (₱{{ number_format($sourceBal, 2) }})"
+                                    >
+                                        <span>Use Max Available (₱{{ number_format($sourceBal, 2) }})</span>
+                                    </button>
+                                @endif
+                            </div>
+                            <input 
+                                type="number" 
+                                step="0.01" 
+                                wire:model.live.debounce.250ms="newProjectBudgetCap" 
+                                placeholder="e.g. {{ $sourceBal > 0 ? number_format($sourceBal, 2, '.', '') : '50000.00' }}" 
+                                class="w-full bg-white border {{ $isCapExceeded ? 'border-rose-500 ring-1 ring-rose-500' : 'border-slate-300' }} rounded-lg px-3 py-2 text-neutral-strong font-mono font-bold"
+                            >
+                            @error('newProjectBudgetCap') 
+                                <p class="text-rose-600 font-bold text-[11px] mt-1">{{ $message }}</p> 
+                            @enderror
+
+                            <!-- Real-time Budget Cap Feedback Box -->
+                            @if($enteredCap > 0)
+                                <div class="mt-2 p-2.5 rounded-lg border {{ $isCapExceeded ? 'bg-rose-50 border-rose-200 text-rose-800' : 'bg-emerald-50/70 border-emerald-200 text-slate-700' }} space-y-1.5">
+                                    <div class="flex items-center justify-between text-[11px] font-bold">
+                                        <span>
+                                            @if($isCapExceeded)
+                                                ⚠️ Exceeds Available Pool Balance!
+                                            @else
+                                                ✓ Budget Cap within Pool Limit ({{ $capUsagePct }}% of pool)
+                                            @endif
+                                        </span>
+                                        <span class="font-mono">
+                                            @if($isCapExceeded)
+                                                Over by ₱{{ number_format($enteredCap - $sourceBal, 2) }}
+                                            @else
+                                                Leaves ₱{{ number_format($sourceBal - $enteredCap, 2) }}
+                                            @endif
+                                        </span>
+                                    </div>
+                                    <div class="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden">
+                                        <div 
+                                            class="h-1.5 rounded-full transition-all duration-300 {{ $isCapExceeded ? 'bg-rose-600' : 'bg-brand' }}" 
+                                            style="width: {{ min(100, $capUsagePct) }}%"
+                                        ></div>
+                                    </div>
+                                </div>
+                            @endif
+                        </div>
+
+                        <!-- Unit Benefit & Target Beneficiaries -->
                         <div class="grid grid-cols-2 gap-3">
                             <div>
-                                <label class="block font-bold text-slate-600 mb-1">Budget Cap (₱) *</label>
-                                <input type="number" step="0.01" wire:model="newProjectBudgetCap" placeholder="e.g. 250000.00" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-neutral-strong font-mono">
+                                <label class="block font-bold text-slate-600 mb-1">Unit Benefit (₱) per Beneficiary</label>
+                                <input 
+                                    type="number" 
+                                    step="0.01" 
+                                    wire:model.live.debounce.250ms="newProjectUnitAmount" 
+                                    placeholder="e.g. 5000.00" 
+                                    class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-neutral-strong font-mono"
+                                >
                             </div>
                             <div>
-                                <label class="block font-bold text-slate-600 mb-1">Unit Benefit (₱) per Beneficiary</label>
-                                <input type="number" step="0.01" wire:model="newProjectUnitAmount" placeholder="e.g. 5000.00" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-neutral-strong font-mono">
+                                <label class="block font-bold text-slate-600 mb-1">Target Beneficiary Count</label>
+                                <input 
+                                    type="number" 
+                                    wire:model.live.debounce.250ms="newProjectTargetCount" 
+                                    placeholder="e.g. 50" 
+                                    class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-neutral-strong font-mono"
+                                >
                             </div>
                         </div>
+
+                        <!-- Live Cost Multiplier & Sync Helper -->
+                        @if($calcTotal > 0)
+                            <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs">
+                                <div>
+                                    <p class="text-[10px] text-slate-500 font-bold uppercase">Estimated Total Payout Calculation</p>
+                                    <p class="font-mono text-neutral-strong text-xs font-bold">
+                                        {{ $newProjectTargetCount }} recipients × ₱{{ number_format((float) ($newProjectUnitAmount ?: 0), 2) }} = 
+                                        <span class="{{ $calcTotal > $sourceBal ? 'text-rose-600' : 'text-brand' }}">₱{{ number_format($calcTotal, 2) }}</span>
+                                    </p>
+                                </div>
+                                @if(abs($calcTotal - $enteredCap) > 0.01 && $calcTotal <= $sourceBal)
+                                    <button 
+                                        type="button" 
+                                        wire:click="syncBudgetCapWithCalculated" 
+                                        class="px-2.5 py-1 rounded bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-900 font-bold text-[10px] transition-colors cursor-pointer shrink-0"
+                                        title="Set the Budget Cap to exactly match the calculated payout (₱{{ number_format($calcTotal, 2) }})"
+                                    >
+                                        Apply ₱{{ number_format($calcTotal, 2) }} to Cap
+                                    </button>
+                                @endif
+                            </div>
+                        @endif
 
                         @if($newProjectBenefitType === 'Goods')
                             <div class="grid grid-cols-3 gap-3">
@@ -723,35 +949,46 @@
                             </div>
                         @endif
 
-                        <div class="grid grid-cols-2 gap-3">
-                            <div>
-                                <label class="block font-bold text-slate-600 mb-1">Target Barangay (Scope)</label>
-                                <select wire:model="newProjectTargetBarangay" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-neutral-strong">
-                                    <option value="">Municipality-Wide</option>
-                                    @foreach($barangays as $brgy)
-                                        <option value="{{ $brgy }}">{{ $brgy }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block font-bold text-slate-600 mb-1">Target Beneficiary Count</label>
-                                <input type="number" wire:model="newProjectTargetCount" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-neutral-strong font-mono">
-                            </div>
+                        <div>
+                            <label class="block font-bold text-slate-600 mb-1">Target Barangay (Scope)</label>
+                            <select wire:model="newProjectTargetBarangay" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-neutral-strong" title="Filter target municipality scope">
+                                <option value="">Municipality-Wide</option>
+                                @foreach($barangays as $brgy)
+                                    <option value="{{ $brgy }}">{{ $brgy }}</option>
+                                @endforeach
+                            </select>
                         </div>
                     </div>
                 @endif
 
                 <!-- STEP 3: FINANCIAL EARMARK & TIMELINE REVIEW -->
                 @if($wizardStep === 3)
+                    @php
+                        $selectedSource = $this->selectedFundingSource;
+                        $sourceBal = (float) ($selectedSource?->remaining_balance ?? 0);
+                        $enteredCap = (float) ($newProjectBudgetCap ?: 0);
+                    @endphp
+
                     <div class="space-y-4 text-xs">
-                        <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+                        <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2.5">
+                            <div class="flex justify-between items-center pb-2 border-b border-slate-200">
+                                <span class="text-slate-500 font-medium">Target Funding Source:</span>
+                                <span class="font-bold text-neutral-strong text-right">
+                                    {{ $selectedSource?->title ?: 'N/A' }} 
+                                    <span class="font-mono text-slate-500 text-[11px]">({{ $selectedSource?->source_code }})</span>
+                                </span>
+                            </div>
                             <div class="flex justify-between">
                                 <span class="text-slate-500">Project Title:</span>
                                 <span class="font-bold text-neutral-strong">{{ $newProjectTitle }}</span>
                             </div>
                             <div class="flex justify-between">
                                 <span class="text-slate-500">Earmarked Budget Cap:</span>
-                                <span class="font-mono font-bold text-brand">₱{{ number_format((float) ($newProjectBudgetCap ?: 0), 2) }}</span>
+                                <span class="font-mono font-bold text-brand">₱{{ number_format($enteredCap, 2) }}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-slate-500">Available Pool Balance After Earmark:</span>
+                                <span class="font-mono font-bold text-slate-700">₱{{ number_format(max(0, $sourceBal - $enteredCap), 2) }}</span>
                             </div>
                             <div class="flex justify-between">
                                 <span class="text-slate-500">Unit Amount:</span>
@@ -760,6 +997,16 @@
                             <div class="flex justify-between">
                                 <span class="text-slate-500">Target Coverage:</span>
                                 <span class="font-medium text-slate-700">{{ $newProjectTargetBarangay ?: 'Municipality-Wide' }} ({{ $newProjectTargetCount }} slots)</span>
+                            </div>
+                            <div class="flex justify-between pt-1 border-t border-slate-200">
+                                <span class="text-slate-500">Enrolled Beneficiaries:</span>
+                                <span class="font-bold {{ count($selectedBeneficiaries) > 0 ? 'text-brand font-mono' : 'text-emerald-700' }}">
+                                    @if(count($selectedBeneficiaries) > 0)
+                                        ✓ {{ count($selectedBeneficiaries) }} candidate(s) pre-selected
+                                    @else
+                                        ⚡ Will auto-enroll {{ $newProjectTargetCount }} citizens upon creation
+                                    @endif
+                                </span>
                             </div>
                         </div>
 
@@ -785,27 +1032,51 @@
                 @if($wizardStep === 4)
                     <div class="space-y-3 text-xs h-full flex flex-col min-h-0">
                         <!-- Summary Alert Banner -->
-                        <div class="p-2.5 rounded-lg bg-emerald-50 border border-emerald-200 flex items-center justify-between text-xs text-brand shrink-0">
+                        <div class="p-2.5 rounded-lg bg-emerald-50 border border-emerald-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-brand shrink-0">
                             <span class="font-medium">
-                                Showing first {{ count($candidates) }} of {{ number_format($totalCandidatesCount) }} Sulop citizens in live CRS registry — refine search to narrow pool.
+                                Showing first {{ count($candidates) }} of {{ number_format($totalCandidatesCount) }} Sulop citizens in live CRS registry.
                             </span>
-                            <span class="font-mono font-bold">{{ count($selectedBeneficiaries) }} selected</span>
+                            <div class="flex items-center gap-2">
+                                <button 
+                                    type="button"
+                                    wire:click="autoFillCandidatePool"
+                                    wire:loading.attr="disabled"
+                                    wire:target="autoFillCandidatePool"
+                                    class="px-2.5 py-1 rounded bg-brand text-white hover:bg-emerald-800 text-[11px] font-bold cursor-pointer transition-colors shadow-2xs flex items-center gap-1 disabled:opacity-75"
+                                    title="Auto-populate selected queue with up to {{ $newProjectTargetCount }} citizens matching filter"
+                                >
+                                    <svg wire:loading wire:target="autoFillCandidatePool" class="animate-spin h-3 w-3 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+                                    <span wire:loading.remove wire:target="autoFillCandidatePool">⚡ Auto-Fill {{ $newProjectTargetCount }} Slots</span>
+                                    <span wire:loading wire:target="autoFillCandidatePool">Enlisting {{ $newProjectTargetCount }}...</span>
+                                </button>
+                                <span class="font-mono font-bold bg-white px-2 py-0.5 rounded border border-emerald-200">{{ count($selectedBeneficiaries) }} / {{ $newProjectTargetCount }} selected</span>
+                            </div>
                         </div>
 
                         <!-- Two-Pane Layout Container with Fixed Height and Inner Scroll -->
                         <div class="grid grid-cols-1 lg:grid-cols-12 gap-3 h-[380px] min-h-0">
                             
                             <!-- Left Pane: Searchable / Paginated Candidates -->
-                            <div class="lg:col-span-7 border border-slate-200 rounded-xl p-3 flex flex-col min-h-0 bg-slate-50/50">
+                            <div class="lg:col-span-7 border border-slate-200 rounded-xl p-3 flex flex-col min-h-0 bg-slate-50/50 relative">
                                 <!-- Filters -->
                                 <div class="flex gap-2 mb-2 shrink-0">
-                                    <input 
-                                        type="text" 
-                                        wire:model.live.debounce.250ms="candidateSearch" 
-                                        placeholder="Search citizen name or CRN..." 
-                                        class="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs text-neutral-strong"
+                                    <div class="relative w-full">
+                                        <input 
+                                            type="text" 
+                                            wire:model.live.debounce.250ms="candidateSearch" 
+                                            placeholder="Search citizen name or CRN..." 
+                                            class="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs text-neutral-strong pr-7"
+                                            title="Search CRS citizen records by full name or Civil Registry Number (CRN)"
+                                        >
+                                        <div wire:loading wire:target="candidateSearch" class="absolute right-2 top-2">
+                                            <svg class="animate-spin h-3.5 w-3.5 text-brand" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+                                        </div>
+                                    </div>
+                                    <select 
+                                        wire:model.live="candidateBarangay" 
+                                        class="w-36 bg-white border border-slate-300 rounded-lg px-2 py-1.5 text-xs text-neutral-strong cursor-pointer"
+                                        title="Filter candidate pool by barangay"
                                     >
-                                    <select wire:model.live="candidateBarangay" class="w-36 bg-white border border-slate-300 rounded-lg px-2 py-1.5 text-xs text-neutral-strong">
                                         <option value="">All Barangays</option>
                                         @foreach($barangays as $brgy)
                                             <option value="{{ $brgy }}">{{ $brgy }}</option>
@@ -814,11 +1085,35 @@
                                 </div>
 
                                 <!-- Candidate List (Scrollable) -->
-                                <div class="flex-1 min-h-0 overflow-y-auto divide-y divide-slate-100 bg-white rounded-lg border border-slate-200">
+                                <div class="flex-1 min-h-0 overflow-y-auto divide-y divide-slate-100 bg-white rounded-lg border border-slate-200 relative">
+                                    <!-- Candidate search/filter loading overlay -->
+                                    <div wire:loading.flex wire:target="candidateSearch, candidateBarangay" class="absolute inset-0 bg-white/80 backdrop-blur-xs z-10 flex-col items-center justify-center gap-2">
+                                        <svg class="animate-spin h-6 w-6 text-brand" fill="none" viewBox="0 0 24 24">
+                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                                        </svg>
+                                        <span class="text-xs font-bold text-neutral-strong">Filtering CRS Registry...</span>
+                                    </div>
+
+                                    <!-- Candidate Review Profile Loading Overlay -->
+                                    <div wire:loading.flex wire:target="openHouseholdReview" class="absolute inset-0 bg-slate-900/40 backdrop-blur-xs z-20 flex-col items-center justify-center p-4">
+                                        <div class="bg-white p-4 rounded-xl shadow-2xl flex items-center gap-3 border border-slate-200 animate-fadeIn">
+                                            <svg class="animate-spin h-5 w-5 text-brand shrink-0" fill="none" viewBox="0 0 24 24">
+                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                                            </svg>
+                                            <div>
+                                                <p class="font-bold text-xs text-neutral-strong">Auditing Household & Benefits...</p>
+                                                <p class="text-[10px] text-slate-500">Querying CRS live demographics & past aid history</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
                                     @forelse($candidates as $candidate)
                                         <div 
                                             wire:click="openHouseholdReview({{ $candidate->id }})"
                                             class="p-2 hover:bg-emerald-50/60 cursor-pointer flex items-center justify-between transition-colors group"
+                                            title="Click to review {{ $candidate->full_name }}'s household history before enrolling"
                                         >
                                             <div>
                                                 <p class="font-bold text-neutral-strong group-hover:text-brand text-xs">{{ $candidate->full_name }}</p>
@@ -826,7 +1121,15 @@
                                                     {{ $candidate->civil_registry_id ?: $candidate->civilregistry_id ?: $candidate->beneficiary_id }} • {{ $candidate->barangay }}
                                                 </p>
                                             </div>
-                                            <span class="text-[10px] font-bold text-brand group-hover:underline px-1.5 py-0.5 rounded bg-emerald-50 border border-emerald-100">Review &rarr;</span>
+                                            <div class="flex items-center gap-1">
+                                                <span wire:loading.remove wire:target="openHouseholdReview({{ $candidate->id }})" class="text-[10px] font-bold text-brand group-hover:underline px-1.5 py-0.5 rounded bg-emerald-50 border border-emerald-100">
+                                                    Review &rarr;
+                                                </span>
+                                                <span wire:loading.flex wire:target="openHouseholdReview({{ $candidate->id }})" class="items-center gap-1 text-[10px] font-bold text-brand px-1.5 py-0.5 rounded bg-emerald-100">
+                                                    <svg class="animate-spin h-3 w-3 text-brand" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+                                                    Auditing...
+                                                </span>
+                                            </div>
                                         </div>
                                     @empty
                                         <div class="p-8 text-center text-slate-400">
@@ -837,13 +1140,26 @@
                             </div>
 
                             <!-- Right Pane: Currently Selected List -->
-                            <div class="lg:col-span-5 border border-slate-200 rounded-xl p-3 flex flex-col min-h-0 bg-white">
+                            <div class="lg:col-span-5 border border-slate-200 rounded-xl p-3 flex flex-col min-h-0 bg-white relative">
                                 <div class="flex items-center justify-between pb-2 border-b border-slate-100 shrink-0">
-                                    <span class="font-bold text-neutral-strong text-xs">
-                                        Selected Candidates ({{ count($selectedBeneficiaries) }})
+                                    <span class="font-bold text-neutral-strong text-xs flex items-center gap-1.5">
+                                        <span>Selected Candidates</span>
+                                        <span class="px-1.5 py-0.2 rounded bg-emerald-50 text-brand border border-emerald-200 font-mono font-bold text-[10px]">
+                                            {{ count($selectedBeneficiaries) }}
+                                        </span>
                                     </span>
                                     @if(count($selectedBeneficiaries) > 0)
-                                        <button wire:click="clearAllCandidates" class="text-[11px] text-rose-600 hover:underline font-bold cursor-pointer">Clear All</button>
+                                        <button 
+                                            wire:click="clearAllCandidates" 
+                                            wire:loading.attr="disabled"
+                                            wire:target="clearAllCandidates"
+                                            class="text-[11px] text-rose-600 hover:underline font-bold cursor-pointer flex items-center gap-1 disabled:opacity-75"
+                                            title="Clear all selected candidate beneficiaries from queue"
+                                        >
+                                            <svg wire:loading wire:target="clearAllCandidates" class="animate-spin h-3 w-3 text-rose-600" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+                                            <span wire:loading.remove wire:target="clearAllCandidates">Clear All</span>
+                                            <span wire:loading wire:target="clearAllCandidates">Clearing...</span>
+                                        </button>
                                     @endif
                                 </div>
 
@@ -857,10 +1173,13 @@
                                             </div>
                                             <button 
                                                 wire:click="removeCandidate('{{ $key }}')" 
-                                                class="text-slate-400 hover:text-rose-600 p-1 cursor-pointer text-sm font-bold"
-                                                title="Remove candidate"
+                                                wire:loading.attr="disabled"
+                                                wire:target="removeCandidate('{{ $key }}')"
+                                                class="text-slate-400 hover:text-rose-600 p-1 cursor-pointer text-sm font-bold disabled:opacity-75"
+                                                title="Remove {{ $sel['full_name'] }} from selection list"
                                             >
-                                                &times;
+                                                <span wire:loading.remove wire:target="removeCandidate('{{ $key }}')">&times;</span>
+                                                <svg wire:loading wire:target="removeCandidate('{{ $key }}')" class="animate-spin h-3 w-3 text-rose-600" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
                                             </button>
                                         </div>
                                     @empty
@@ -880,52 +1199,113 @@
                 @endif
             </div>
 
+            <!-- Global Action Loading Overlay inside Project Wizard Modal -->
+            <div wire:loading.flex wire:target="createProject" class="absolute inset-0 bg-[#0F172A]/70 backdrop-blur-xs z-50 rounded-2xl flex-col items-center justify-center p-6 text-white">
+                <div class="bg-white text-neutral-strong px-7 py-6 rounded-2xl shadow-2xl flex flex-col items-center gap-3 border border-slate-200 animate-fadeIn text-center">
+                    <svg class="animate-spin h-9 w-9 text-brand" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                    </svg>
+                    <div>
+                        <p class="font-bold text-sm text-neutral-strong">Creating Ayuda Project</p>
+                        <p class="text-xs text-slate-500 mt-0.5">Earmarking budget pool & recording immutable ledger entry...</p>
+                    </div>
+                </div>
+            </div>
+
             <!-- WIZARD FOOTER ACTIONS -->
             <div class="flex items-center justify-between pt-3 border-t border-slate-100 shrink-0">
                 @if($wizardStep > 1)
-                    <button type="button" wire:click="prevStep" class="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs cursor-pointer">
+                    <button 
+                        type="button" 
+                        wire:click="prevStep" 
+                        wire:loading.attr="disabled"
+                        wire:target="prevStep, nextStep, createProject"
+                        class="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs cursor-pointer disabled:opacity-75"
+                        title="Return to previous wizard step"
+                    >
                         &larr; Back
                     </button>
                 @else
-                    <button type="button" wire:click="closeProjectModal" class="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs cursor-pointer">
+                    <button 
+                        type="button" 
+                        wire:click="closeProjectModal" 
+                        wire:loading.attr="disabled"
+                        wire:target="createProject"
+                        class="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs cursor-pointer disabled:opacity-75"
+                        title="Cancel and exit project wizard"
+                    >
                         Cancel
                     </button>
                 @endif
 
                 <div class="flex items-center gap-2">
                     @if($wizardStep === 1)
-                        <button type="button" wire:click="nextStep" class="px-5 py-2 rounded-lg bg-brand hover:bg-emerald-800 text-white font-bold text-xs cursor-pointer flex items-center gap-1.5">
-                            <span>Continue to Particulars</span>
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                        <button 
+                            type="button" 
+                            wire:click="nextStep" 
+                            wire:loading.attr="disabled"
+                            wire:target="nextStep"
+                            class="px-5 py-2 rounded-lg bg-brand hover:bg-emerald-800 text-white font-bold text-xs cursor-pointer flex items-center gap-1.5 shadow-xs disabled:opacity-75"
+                            title="Proceed to configure project particulars and target coverage"
+                        >
+                            <svg wire:loading wire:target="nextStep" class="animate-spin h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+                            <span wire:loading.remove wire:target="nextStep">Continue to Particulars</span>
+                            <span wire:loading wire:target="nextStep">Validating Source...</span>
+                            <svg wire:loading.remove wire:target="nextStep" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
                         </button>
                     @elseif($wizardStep === 2)
-                        <button type="button" wire:click="nextStep" class="px-5 py-2 rounded-lg bg-brand hover:bg-emerald-800 text-white font-bold text-xs cursor-pointer flex items-center gap-1.5">
-                            <span>Review Earmark</span>
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                        <button 
+                            type="button" 
+                            wire:click="nextStep" 
+                            wire:loading.attr="disabled"
+                            wire:target="nextStep"
+                            class="px-5 py-2 rounded-lg bg-brand hover:bg-emerald-800 text-white font-bold text-xs cursor-pointer flex items-center gap-1.5 shadow-xs disabled:opacity-75"
+                            title="Proceed to financial earmark review and timeline settings"
+                        >
+                            <svg wire:loading wire:target="nextStep" class="animate-spin h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+                            <span wire:loading.remove wire:target="nextStep">Review Earmark</span>
+                            <span wire:loading wire:target="nextStep">Validating Budget Cap...</span>
+                            <svg wire:loading.remove wire:target="nextStep" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
                         </button>
                     @elseif($wizardStep === 3)
                         <button 
                             type="button" 
-                            wire:click="createProject(new \App\Services\BudgetLedgerService)" 
-                            class="px-4 py-2 rounded-lg bg-slate-200 hover:bg-slate-300 text-neutral-strong font-bold text-xs cursor-pointer"
+                            wire:click="createProject" 
+                            wire:loading.attr="disabled"
+                            wire:target="createProject, nextStep"
+                            class="px-4 py-2 rounded-lg bg-slate-200 hover:bg-slate-300 text-neutral-strong font-bold text-xs cursor-pointer shadow-xs flex items-center gap-1.5 disabled:opacity-75"
+                            title="Immediately create project without pre-enrolling beneficiary candidates"
                         >
-                            Skip Enrollment & Create Project
+                            <svg wire:loading wire:target="createProject" class="animate-spin h-3.5 w-3.5 text-neutral-strong" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+                            <span wire:loading.remove wire:target="createProject">Skip Enrollment & Create Project</span>
+                            <span wire:loading wire:target="createProject">Creating Project...</span>
                         </button>
                         <button 
                             type="button" 
                             wire:click="nextStep" 
-                            class="px-5 py-2 rounded-lg bg-accent hover:bg-amber-400 text-neutral-strong font-bold text-xs cursor-pointer flex items-center gap-1.5"
+                            wire:loading.attr="disabled"
+                            wire:target="nextStep, createProject"
+                            class="px-5 py-2 rounded-lg bg-accent hover:bg-amber-400 text-neutral-strong font-bold text-xs cursor-pointer flex items-center gap-1.5 shadow-xs disabled:opacity-75"
+                            title="Proceed to candidate search and household audit screening"
                         >
-                            <span>Enroll Candidates (Step 4)</span>
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                            <svg wire:loading wire:target="nextStep" class="animate-spin h-3.5 w-3.5 text-neutral-strong" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+                            <span wire:loading.remove wire:target="nextStep">Enroll Candidates (Step 4)</span>
+                            <span wire:loading wire:target="nextStep">Loading CRS Pool...</span>
+                            <svg wire:loading.remove wire:target="nextStep" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
                         </button>
                     @elseif($wizardStep === 4)
                         <button 
                             type="button" 
-                            wire:click="createProject(new \App\Services\BudgetLedgerService)" 
-                            class="px-6 py-2.5 rounded-lg bg-brand hover:bg-emerald-800 text-white font-black text-xs cursor-pointer shadow-md"
+                            wire:click="createProject" 
+                            wire:loading.attr="disabled"
+                            wire:target="createProject"
+                            class="px-6 py-2.5 rounded-lg bg-brand hover:bg-emerald-800 text-white font-black text-xs cursor-pointer shadow-md flex items-center gap-1.5 disabled:opacity-75"
+                            title="Finalize project creation and enroll all selected citizens into the project"
                         >
-                            Create Project & Enroll Candidates
+                            <svg wire:loading wire:target="createProject" class="animate-spin h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+                            <span wire:loading.remove wire:target="createProject">Create Project & Enroll Candidates</span>
+                            <span wire:loading wire:target="createProject">Enrolling Citizens & Posting Ledger...</span>
                         </button>
                     @endif
                 </div>
@@ -933,11 +1313,12 @@
 
         </div>
     </div>
+    @endif
 
     <!-- MODAL 2B: HOUSEHOLD AUDIT REVIEW MODAL (TWO-STEP CONFIRMATION) -->
     @if($showHouseholdModal && $reviewingCandidate)
         <div class="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-[#0F172A]/85 backdrop-blur-md">
-            <div class="w-full max-w-2xl bg-white border border-slate-200 rounded-2xl shadow-2xl p-6 space-y-4 text-neutral-strong">
+            <div class="w-full max-w-2xl bg-white border border-slate-200 rounded-2xl shadow-2xl p-6 space-y-4 text-neutral-strong relative">
                 
                 <!-- Modal Header -->
                 <div class="flex items-center justify-between border-b border-slate-100 pb-3">
@@ -952,7 +1333,13 @@
                             CRN: <span class="font-mono font-bold text-brand">{{ $reviewingCandidate['civil_registry_id'] }}</span> • Barangay: {{ $reviewingCandidate['barangay'] }}
                         </p>
                     </div>
-                    <button wire:click="closeHouseholdReview" class="text-slate-400 hover:text-neutral-strong text-xl font-bold cursor-pointer">&times;</button>
+                    <button 
+                        wire:click="closeHouseholdReview" 
+                        wire:loading.attr="disabled"
+                        wire:target="confirmAddCandidate"
+                        class="text-slate-400 hover:text-neutral-strong text-xl font-bold cursor-pointer disabled:opacity-75"
+                        title="Close household review modal"
+                    >&times;</button>
                 </div>
 
                 <!-- Demographics & Household Structure Card -->
@@ -1013,11 +1400,27 @@
 
                 <!-- Modal Actions -->
                 <div class="flex justify-end gap-2 pt-3 border-t border-slate-100">
-                    <button type="button" wire:click="closeHouseholdReview" class="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold cursor-pointer">
+                    <button 
+                        type="button" 
+                        wire:click="closeHouseholdReview" 
+                        wire:loading.attr="disabled"
+                        wire:target="confirmAddCandidate"
+                        class="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold cursor-pointer disabled:opacity-75"
+                        title="Cancel candidate selection and return to list"
+                    >
                         Cancel
                     </button>
-                    <button type="button" wire:click="confirmAddCandidate" class="px-5 py-2 rounded-lg bg-brand hover:bg-emerald-800 text-white text-xs font-bold cursor-pointer shadow-xs">
-                        Add to Project
+                    <button 
+                        type="button" 
+                        wire:click="confirmAddCandidate" 
+                        wire:loading.attr="disabled"
+                        wire:target="confirmAddCandidate"
+                        class="px-5 py-2 rounded-lg bg-brand hover:bg-emerald-800 text-white text-xs font-bold cursor-pointer shadow-xs flex items-center gap-1.5 disabled:opacity-75"
+                        title="Confirm household eligibility and add candidate to project enrollment queue"
+                    >
+                        <svg wire:loading wire:target="confirmAddCandidate" class="animate-spin h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+                        <span wire:loading.remove wire:target="confirmAddCandidate">Add to Project</span>
+                        <span wire:loading wire:target="confirmAddCandidate">Adding Candidate...</span>
                     </button>
                 </div>
 
@@ -1037,8 +1440,28 @@
                 This action will reclaim the remaining unspent budget cap from this project back into its parent funding source's unrestricted pool and close the project. A permanent Reallocation entry will be posted to the ledger.
             </p>
             <div class="flex justify-end gap-2 pt-3 border-t border-slate-100">
-                <button type="button" wire:click="$set('showReallocationModal', false)" class="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold cursor-pointer">Cancel</button>
-                <button type="button" wire:click="executeReallocation(new \App\Services\BudgetLedgerService)" class="px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold cursor-pointer">Confirm Reallocation</button>
+                <button 
+                    type="button" 
+                    wire:click="$set('showReallocationModal', false)" 
+                    wire:loading.attr="disabled"
+                    wire:target="executeReallocation"
+                    class="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold cursor-pointer disabled:opacity-75"
+                    title="Cancel reallocation and keep project active"
+                >
+                    Cancel
+                </button>
+                <button 
+                    type="button" 
+                    wire:click="executeReallocation" 
+                    wire:loading.attr="disabled"
+                    wire:target="executeReallocation"
+                    class="px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold cursor-pointer shadow-xs flex items-center gap-1.5 disabled:opacity-75"
+                    title="Execute immutable reallocation: reclaim unspent balance to source and close project"
+                >
+                    <svg wire:loading wire:target="executeReallocation" class="animate-spin h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+                    <span wire:loading.remove wire:target="executeReallocation">Confirm Reallocation</span>
+                    <span wire:loading wire:target="executeReallocation">Reallocating...</span>
+                </button>
             </div>
         </div>
     </div>

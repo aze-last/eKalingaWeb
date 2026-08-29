@@ -163,7 +163,7 @@ class BudgetManagementTest extends TestCase
             ->assertSet('reviewingCandidate.full_name', 'Santos, Maria')
             ->call('confirmAddCandidate')
             ->assertCount('selectedBeneficiaries', 1)
-            ->call('createProject', app(BudgetLedgerService::class));
+            ->call('createProject');
 
         $this->assertDatabaseHas('ayuda_programs', [
             'title' => 'Typhoon Relief 2026',
@@ -175,5 +175,71 @@ class BudgetManagementTest extends TestCase
             'household_no' => 'HH-100',
             'status' => DistributionStatus::PENDING->value,
         ]);
+    }
+
+    public function test_project_wizard_prevents_advancing_when_budget_cap_exceeds_funding_source(): void
+    {
+        $funding = FundingSource::create([
+            'funding_type' => FundingType::Government,
+            'title' => 'GGMS Municipal Government General Fund',
+            'source_code' => 'GGMS-OFF-2026-0006',
+            'allocated_amount' => 70000.00,
+            'spent_amount' => 0.00,
+            'remaining_balance' => 70000.00,
+        ]);
+
+        Livewire::actingAs($this->admin)
+            ->test(Workspace::class)
+            ->call('openProjectModal')
+            ->set('newProjectFundingSourceId', $funding->id)
+            ->call('nextStep')
+            ->assertSet('wizardStep', 2)
+            ->set('newProjectTitle', 'Barangay Aid')
+            ->set('newProjectBudgetCap', '100000.00') // Exceeds 70k
+            ->assertHasErrors(['newProjectBudgetCap'])
+            ->call('nextStep')
+            ->assertSet('wizardStep', 2) // Remains on step 2 due to validation
+            ->call('setBudgetCapToMax')
+            ->assertSet('newProjectBudgetCap', '70000')
+            ->assertHasNoErrors(['newProjectBudgetCap'])
+            ->call('nextStep')
+            ->assertSet('wizardStep', 3);
+    }
+
+    public function test_create_project_using_70k_office_allocation_source(): void
+    {
+        $funding = FundingSource::create([
+            'funding_type' => FundingType::Government,
+            'title' => 'GGMS Municipal Government General Fund',
+            'source_code' => 'GGMS-OFF-2026-0006',
+            'office' => 'Municipal Office',
+            'fiscal_year' => 2026,
+            'allocated_amount' => 70000.00,
+            'spent_amount' => 0.00,
+            'remaining_balance' => 70000.00,
+            'status' => 'Active',
+        ]);
+
+        Livewire::actingAs($this->admin)
+            ->test(Workspace::class)
+            ->call('openProjectModal')
+            ->set('newProjectFundingSourceId', $funding->id)
+            ->set('newProjectBenefitType', 'Cash')
+            ->call('nextStep')
+            ->set('newProjectTitle', 'Sulop Elderly Aid')
+            ->set('newProjectBudgetCap', '50000.00')
+            ->set('newProjectUnitAmount', '2000.00')
+            ->set('newProjectTargetCount', 25)
+            ->call('nextStep')
+            ->assertSet('wizardStep', 3)
+            ->call('createProject');
+
+        $this->assertDatabaseHas('ayuda_programs', [
+            'title' => 'Sulop Elderly Aid',
+            'budget_cap' => 50000.00,
+            'funding_source_id' => $funding->id,
+        ]);
+
+        $this->assertEquals(20000.00, (float) $funding->fresh()->remaining_balance);
     }
 }

@@ -194,9 +194,9 @@ class BudgetLedgerService
                 'item_quantity_per_beneficiary' => (int) ($data['item_quantity_per_beneficiary'] ?? 1),
                 'target_beneficiaries' => (int) ($data['target_beneficiaries'] ?? 0),
                 'target_barangay' => $data['target_barangay'] ?? null,
-                'start_date' => $data['start_date'] ?? now()->toDateString(),
-                'end_date' => $data['end_date'] ?? null,
-                'description' => $data['description'] ?? null,
+                'start_date' => ! empty($data['start_date']) ? $data['start_date'] : now()->toDateString(),
+                'end_date' => ! empty($data['end_date']) ? $data['end_date'] : null,
+                'description' => ! empty($data['description']) ? $data['description'] : null,
                 'status' => ProgramStatus::Active,
                 'created_by' => $userId ?? Auth::id(),
             ]);

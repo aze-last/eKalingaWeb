@@ -3,15 +3,11 @@
 namespace App\Livewire\Dashboard;
 
 use App\Enums\DistributionStatus;
-use App\Enums\FundingType;
 use App\Enums\ProgramStatus;
 use App\Models\ActivityLog;
 use App\Models\AyudaProgram;
 use App\Models\AyudaProjectClaim;
-use App\Models\Beneficiary;
-use App\Models\FundingSource;
-use App\Models\GgmsConsolidatedTransaction;
-use Illuminate\Support\Facades\DB;
+use App\Services\PerformanceCacheService;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -20,19 +16,10 @@ use Livewire\Component;
 #[Title('Dashboard - eKalinga+')]
 class Overview extends Component
 {
-    public function render()
+    public function render(PerformanceCacheService $cacheService)
     {
-        // 1. Budget Financial Aggregates
-        $govAllocated = FundingSource::where('funding_type', FundingType::Government)->sum('allocated_amount');
-        $govSpent = FundingSource::where('funding_type', FundingType::Government)->sum('spent_amount');
-        $govBalance = FundingSource::where('funding_type', FundingType::Government)->sum('remaining_balance');
-
-        $privateAllocated = FundingSource::where('funding_type', FundingType::Private)->sum('allocated_amount');
-        $privateSpent = FundingSource::where('funding_type', FundingType::Private)->sum('spent_amount');
-        $privateBalance = FundingSource::where('funding_type', FundingType::Private)->sum('remaining_balance');
-
-        $totalDisbursed = AyudaProjectClaim::sum('unit_amount');
-        $totalClaims = AyudaProjectClaim::count();
+        // 1. Cached Budget & Demographic KPI Aggregates
+        $metrics = $cacheService->getDashboardKpiMetrics();
 
         // 2. Active Programs Snapshot
         $activePrograms = AyudaProgram::with('fundingSource')
@@ -58,36 +45,10 @@ class Overview extends Component
             ->take(6)
             ->get();
 
-        // 5. GGMS Sync Status
-        $ggmsCount = GgmsConsolidatedTransaction::count();
-
-        try {
-            $totalBeneficiaries = Beneficiary::count();
-            $barangayCount = DB::connection('crs')->table('barangays')->count();
-        } catch (\Throwable) {
-            $totalBeneficiaries = GgmsConsolidatedTransaction::distinct('civil_registry_id')->count('civil_registry_id');
-            $barangayCount = GgmsConsolidatedTransaction::distinct('barangay')->whereNotNull('barangay')->count('barangay');
-        }
-
-        if (! $barangayCount) {
-            $barangayCount = 25;
-        }
-
-        return view('livewire.dashboard.overview', [
-            'govAllocated' => $govAllocated,
-            'govSpent' => $govSpent,
-            'govBalance' => $govBalance,
-            'privateAllocated' => $privateAllocated,
-            'privateSpent' => $privateSpent,
-            'privateBalance' => $privateBalance,
-            'totalDisbursed' => $totalDisbursed,
-            'totalBeneficiaries' => $totalBeneficiaries,
-            'totalClaims' => $totalClaims,
+        return view('livewire.dashboard.overview', array_merge($metrics, [
             'activePrograms' => $activePrograms,
             'recentActivities' => $recentActivities,
             'recentClaims' => $recentClaims,
-            'ggmsCount' => $ggmsCount,
-            'barangayCount' => $barangayCount,
-        ]);
+        ]));
     }
 }

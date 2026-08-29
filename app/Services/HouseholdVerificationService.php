@@ -5,6 +5,8 @@ namespace App\Services;
 use App\Models\AyudaProgram;
 use App\Models\AyudaProjectClaim;
 use App\Models\Beneficiary;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 
 class HouseholdVerificationService
 {
@@ -15,67 +17,90 @@ class HouseholdVerificationService
      */
     public function checkHouseholdStatus(Beneficiary $beneficiary, AyudaProgram $currentProgram): array
     {
-        if (empty($beneficiary->household_no)) {
+        $hhNo = $beneficiary->household_no;
+        if (empty($hhNo) || $hhNo === 'N/A') {
             return [
                 'has_warning' => false,
                 'duplicate_type' => 'NONE',
                 'message' => 'No household number registered.',
+                'household_no' => 'N/A',
                 'existing_claims' => [],
             ];
         }
 
-        // Find all other beneficiaries in the same household
-        $householdMembers = Beneficiary::where('household_no', $beneficiary->household_no)
-            ->where('id', '!=', $beneficiary->id)
-            ->pluck('id');
+        try {
+            // Find other beneficiaries in same household
+            $householdMembers = collect();
+            $connection = $beneficiary->getConnectionName() ?: config('database.default');
+            $table = $beneficiary->getTable();
 
-        if ($householdMembers->isEmpty()) {
-            return [
-                'has_warning' => false,
-                'duplicate_type' => 'NONE',
-                'message' => 'No other members found in household '.$beneficiary->household_no,
-                'existing_claims' => [],
-            ];
-        }
+            if (Schema::connection($connection)->hasColumn($table, 'household_no')) {
+                $householdMembers = Beneficiary::where('household_no', $hhNo)
+                    ->where('id', '!=', $beneficiary->id)
+                    ->pluck('id');
+            } elseif (Schema::connection($connection)->hasColumn($table, 'beneficiary_id')) {
+                $householdMembers = Beneficiary::where('beneficiary_id', 'like', "%-{$hhNo}-%")
+                    ->where('id', '!=', $beneficiary->id)
+                    ->pluck('id');
+            }
 
-        // Query claims made by other household members in this program or matching benefit type
-        $existingClaims = AyudaProjectClaim::with(['beneficiary', 'ayudaProgram'])
-            ->whereIn('beneficiary_id', $householdMembers)
-            ->where(function ($query) use ($currentProgram) {
-                $query->where('ayuda_program_id', $currentProgram->id)
-                    ->orWhereHas('ayudaProgram', function ($q) use ($currentProgram) {
-                        $q->where('benefit_type', $currentProgram->benefit_type);
-                    });
-            })
-            ->latest('claimed_at')
-            ->get();
+            // Query claims made by other household members in local AyudaProjectClaim
+            $claimQuery = AyudaProjectClaim::with(['beneficiary', 'ayudaProgram'])
+                ->where('household_no', $hhNo)
+                ->where('beneficiary_id', '!=', $beneficiary->id)
+                ->where(function ($query) use ($currentProgram) {
+                    $query->where('ayuda_program_id', $currentProgram->id)
+                        ->orWhereHas('ayudaProgram', function ($q) use ($currentProgram) {
+                            $q->where('benefit_type', $currentProgram->benefit_type);
+                        });
+                });
 
-        if ($existingClaims->isNotEmpty()) {
-            $firstClaim = $existingClaims->first();
-            $memberName = $firstClaim->beneficiary?->full_name ?? 'A household member';
-            $programTitle = $firstClaim->ayudaProgram?->title ?? 'a project';
-            $claimDate = $firstClaim->claimed_at->format('M d, Y');
+            if ($householdMembers->isNotEmpty()) {
+                $claimQuery->orWhere(function ($q) use ($householdMembers, $currentProgram) {
+                    $q->whereIn('beneficiary_id', $householdMembers)
+                        ->where(function ($inner) use ($currentProgram) {
+                            $inner->where('ayuda_program_id', $currentProgram->id)
+                                ->orWhereHas('ayudaProgram', function ($p) use ($currentProgram) {
+                                    $p->where('benefit_type', $currentProgram->benefit_type);
+                                });
+                        });
+                });
+            }
 
-            $inSameProject = $existingClaims->contains('ayuda_program_id', $currentProgram->id);
+            $existingClaims = $claimQuery->latest('claimed_at')->get();
 
-            return [
-                'has_warning' => true,
-                'duplicate_type' => $inSameProject ? 'SAME_PROJECT' : 'CROSS_PROJECT_SAME_TYPE',
-                'message' => "Warning: Household #{$beneficiary->household_no} member {$memberName} already claimed in {$programTitle} on {$claimDate}.",
-                'existing_claims' => $existingClaims->map(fn ($c) => [
-                    'claim_code' => $c->claim_code,
-                    'member_name' => $c->beneficiary?->full_name,
-                    'program' => $c->ayudaProgram?->title,
-                    'amount' => $c->unit_amount,
-                    'date' => $c->claimed_at->format('M d, Y h:i A'),
-                ])->toArray(),
-            ];
+            if ($existingClaims->isNotEmpty()) {
+                $firstClaim = $existingClaims->first();
+                $memberName = $firstClaim->beneficiary?->full_name ?? 'A household member';
+                $programTitle = $firstClaim->ayudaProgram?->title ?? 'a project';
+                $claimDate = $firstClaim->claimed_at?->format('M d, Y') ?? 'recently';
+
+                $inSameProject = $existingClaims->contains('ayuda_program_id', $currentProgram->id);
+
+                return [
+                    'has_warning' => true,
+                    'duplicate_type' => $inSameProject ? 'SAME_PROJECT' : 'CROSS_PROJECT_SAME_TYPE',
+                    'message' => "Warning: Household #{$hhNo} member {$memberName} already received assistance in {$programTitle} on {$claimDate}.",
+                    'household_no' => $hhNo,
+                    'existing_claims' => $existingClaims->map(fn ($c) => [
+                        'claim_code' => $c->claim_code,
+                        'member_name' => $c->beneficiary?->full_name ?: 'Household Member',
+                        'program' => $c->ayudaProgram?->title ?: 'Ayuda Program',
+                        'benefit_type' => $c->ayudaProgram?->benefit_type?->value ?? 'Cash',
+                        'amount' => $c->unit_amount,
+                        'date' => $c->claimed_at?->format('M d, Y h:i A') ?? 'N/A',
+                    ])->toArray(),
+                ];
+            }
+        } catch (\Throwable $e) {
+            Log::warning('Household duplicate check skipped: '.$e->getMessage());
         }
 
         return [
             'has_warning' => false,
             'duplicate_type' => 'NONE',
             'message' => 'No duplicate household claims detected.',
+            'household_no' => $hhNo,
             'existing_claims' => [],
         ];
     }

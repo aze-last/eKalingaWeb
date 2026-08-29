@@ -5,6 +5,7 @@ namespace App\Livewire\Ggms;
 use App\Models\GgmsConsolidatedTransaction;
 use App\Models\GgmsPendingTransaction;
 use App\Services\GgmsTransactionService;
+use App\Services\PerformanceCacheService;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -52,9 +53,9 @@ class TransactionLedger extends Component
 
     public function syncNow(GgmsTransactionService $ggmsService): void
     {
-        $flushed = $ggmsService->flushPendingTransactions();
+        $res = $ggmsService->syncWithGgms();
         $this->dispatch('play-audio-success');
-        $this->dispatch('toast', type: 'success', message: "GGMS Synchronization complete. {$flushed} offline pending transactions flushed.");
+        $this->dispatch('toast', type: 'success', message: "GGMS Synchronization complete. {$res['pushed']} pushed to municipal database, {$res['pulled']} new records consolidated.");
     }
 
     public function render()
@@ -97,12 +98,7 @@ class TransactionLedger extends Component
             ? GgmsConsolidatedTransaction::with(['beneficiary', 'recorder'])->find($this->inspectingTransactionId)
             : null;
 
-        $barangays = GgmsConsolidatedTransaction::distinct()
-            ->whereNotNull('barangay')
-            ->where('barangay', '!=', '')
-            ->orderBy('barangay')
-            ->pluck('barangay')
-            ->toArray();
+        $barangays = app(PerformanceCacheService::class)->getBarangays();
 
         return view('livewire.ggms.transaction-ledger', [
             'totalSynced' => $totalSynced,

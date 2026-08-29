@@ -9,7 +9,10 @@ use App\Livewire\Distribution\Workspace as DistributionWorkspace;
 use App\Livewire\Ggms\TransactionLedger as GgmsTransactionLedger;
 use App\Livewire\Masterlist\Index as MasterlistIndex;
 use App\Livewire\Masterlist\Profile as MasterlistProfile;
+use App\Livewire\Profile\MyAccount;
 use App\Livewire\Reports\Builder as ReportsBuilder;
+use App\Livewire\Settings\SystemProfile;
+use App\Livewire\Users\Index as UsersIndex;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -41,4 +44,11 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/ggms', GgmsTransactionLedger::class)->name('ggms');
     Route::get('/reports', ReportsBuilder::class)->name('reports');
     Route::get('/reports/download-pdf', [ReportPdfController::class, 'download'])->name('reports.pdf');
+
+    // My Account (Available to all authenticated users)
+    Route::get('/my-account', MyAccount::class)->name('profile.index');
+
+    // SuperAdmin User Management & System Configuration Routes
+    Route::get('/users', UsersIndex::class)->name('users.index')->middleware(['can:manage-users']);
+    Route::get('/system-profile', SystemProfile::class)->name('settings.profile')->middleware(['can:manage-users']);
 });

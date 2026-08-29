@@ -82,10 +82,25 @@ class Beneficiary extends Model
     {
         return Attribute::make(
             get: function () {
-                return $this->attributes['household_no']
-                    ?? $this->attributes['household_id']
-                    ?? $this->attributes['family_id']
-                    ?? 'N/A';
+                if (! empty($this->attributes['household_no'])) {
+                    return (string) $this->attributes['household_no'];
+                }
+                if (! empty($this->attributes['household_id'])) {
+                    return (string) $this->attributes['household_id'];
+                }
+                if (! empty($this->attributes['household_number'])) {
+                    return (string) $this->attributes['household_number'];
+                }
+                if (! empty($this->attributes['family_id'])) {
+                    return (string) $this->attributes['family_id'];
+                }
+
+                $benId = $this->attributes['beneficiary_id'] ?? '';
+                if ($benId && preg_match('/BEN-\d+-(\d+)-\d+/', $benId, $matches)) {
+                    return $matches[1];
+                }
+
+                return 'N/A';
             }
         );
     }

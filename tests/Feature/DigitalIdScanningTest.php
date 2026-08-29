@@ -175,4 +175,30 @@ class DigitalIdScanningTest extends TestCase
             'unit_amount' => 5000.00,
         ]);
     }
+
+    public function test_livewire_enroll_beneficiary_into_distribution_queue(): void
+    {
+        $this->actingAs($this->admin);
+
+        $ben = Beneficiary::create([
+            'civil_registry_id' => 'CRN-ENROLL-001',
+            'household_no' => 'HH-ENROLL-001',
+            'first_name' => 'Queued',
+            'last_name' => 'Citizen',
+            'barangay' => 'Poblacion',
+        ]);
+
+        Livewire::test(Workspace::class)
+            ->set('selectedProjectId', $this->program->id)
+            ->call('enrollBeneficiary', $ben->id)
+            ->assertDispatched('toast', function ($name, $params) {
+                return $params['type'] === 'success';
+            });
+
+        $this->assertDatabaseHas('distribution_enrollments', [
+            'ayuda_program_id' => $this->program->id,
+            'beneficiary_id' => $ben->id,
+            'status' => 'PENDING',
+        ]);
+    }
 }

@@ -94,7 +94,7 @@
                 </thead>
 
                 <!-- SKELETON LOADING ROWS (SHOWN ON WIRE:LOADING) -->
-                <tbody wire:loading.table-row-group class="divide-y divide-slate-100">
+                <tbody wire:loading class="divide-y divide-slate-100">
                     @for($i = 0; $i < 8; $i++)
                         <tr class="animate-pulse">
                             <td class="px-4 py-4">

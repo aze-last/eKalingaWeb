@@ -3,8 +3,8 @@
 namespace App\Livewire\Masterlist;
 
 use App\Models\Beneficiary;
+use App\Services\PerformanceCacheService;
 use Illuminate\Pagination\LengthAwarePaginator;
-use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -36,7 +36,7 @@ class Index extends Component
     {
         $this->connectionError = null;
         $beneficiaries = collect();
-        $barangays = [];
+        $barangays = app(PerformanceCacheService::class)->getBarangays();
 
         try {
             $query = Beneficiary::query();
@@ -66,22 +66,6 @@ class Index extends Component
             }
 
             $beneficiaries = $query->paginate(25);
-
-            // Fetch barangays from CRS database
-            try {
-                $barangays = DB::connection('crs')
-                    ->table('barangays')
-                    ->orderBy('name')
-                    ->pluck('name')
-                    ->toArray();
-            } catch (\Throwable) {
-                $barangays = [
-                    'Balasinon', 'Buguis', 'Carre', 'Clib', 'Harada Yano', 'Ibo', 'Inayagan',
-                    'Kiblagon', 'Labon', 'Lapediche', 'Luparan', 'Mckinley', 'New Cebu',
-                    'Osmeña', 'Palili', 'Parame', 'Poblacion', 'Roxas', 'Solongvale',
-                    'Tagolilong', 'Tala-o', 'Talas', 'Tanwalang', 'Waterfall',
-                ];
-            }
         } catch (\Throwable $e) {
             $this->connectionError = 'Unable to connect to live CRS database ('.config('database.connections.crs.host').':3306). Reason: '.$e->getMessage();
             $beneficiaries = new LengthAwarePaginator([], 0, 25);
