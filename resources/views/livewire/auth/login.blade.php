@@ -182,33 +182,6 @@
                 </div>
             </form>
 
-            <!-- Quick Demo Accounts (Local/Testing Environment Only) -->
-            @if($isLocalEnvironment)
-                <div class="pt-4 border-t border-slate-800/80">
-                    <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-2.5 text-center">
-                        Development Quick Access
-                    </p>
-                    <div class="grid grid-cols-2 gap-2">
-                        <button 
-                            type="button" 
-                            wire:click="quickLogin('SuperAdmin')"
-                            class="bg-[#0E1626] hover:bg-[#152035] border border-slate-800 rounded-xl p-2.5 text-left transition-colors cursor-pointer"
-                        >
-                            <p class="text-xs font-bold text-white">Super Admin</p>
-                            <p class="text-[10px] text-slate-400 font-mono">superadmin / password</p>
-                        </button>
-                        <button 
-                            type="button" 
-                            wire:click="quickLogin('Admin')"
-                            class="bg-[#0E1626] hover:bg-[#152035] border border-slate-800 rounded-xl p-2.5 text-left transition-colors cursor-pointer"
-                        >
-                            <p class="text-xs font-bold text-white">Admin (MSWDO)</p>
-                            <p class="text-[10px] text-slate-400 font-mono">admin / password</p>
-                        </button>
-                    </div>
-                </div>
-            @endif
-
             <!-- Terms & Privacy Footer -->
             <div class="pt-6 text-center text-xs text-slate-400">
                 By signing in, you agree to our 

@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Models\User;
 use App\Policies\UserPolicy;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -30,5 +31,9 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('distribute', fn (User $user) => $user->canDistribute());
         Gate::define('view-reports', fn (User $user) => $user->canViewReports());
         Gate::define('view-ggms', fn (User $user) => $user->canViewGgms());
+
+        if (request()->header('x-forwarded-proto') === 'https' || str_contains(request()->header('host', ''), 'lhr.life') || str_contains(request()->header('host', ''), 'ngrok')) {
+            URL::forceScheme('https');
+        }
     }
 }

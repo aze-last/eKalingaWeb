@@ -16,12 +16,35 @@ use Livewire\Component;
 #[Title('Dashboard - eKalinga+')]
 class Overview extends Component
 {
+    public string $timeframe = 'all';
+
+    public string $activeTab = 'radar';
+
+    public function setTimeframe(string $tf): void
+    {
+        $this->timeframe = $tf;
+    }
+
+    public function setActiveTab(string $tab): void
+    {
+        $this->activeTab = $tab;
+    }
+
     public function render(PerformanceCacheService $cacheService)
     {
         // 1. Cached Budget & Demographic KPI Aggregates
         $metrics = $cacheService->getDashboardKpiMetrics();
 
-        // 2. Active Programs Snapshot
+        // 2. Barangay Ayuda Leaderboard
+        $barangayLeaderboard = $cacheService->getBarangayLeaderboard();
+
+        // 3. Disbursement Trends
+        $disbursementTrends = $cacheService->getDisbursementTrends();
+
+        // 4. Demographics Summary
+        $demographics = $cacheService->getDemographicsSummary();
+
+        // 5. Active Programs Snapshot
         $activePrograms = AyudaProgram::with('fundingSource')
             ->where('status', ProgramStatus::Active)
             ->withCount([
@@ -30,22 +53,25 @@ class Overview extends Component
                 'enrollments as unreleased_count' => fn ($q) => $q->where('status', DistributionStatus::UNRELEASED),
             ])
             ->latest()
-            ->take(5)
+            ->take(6)
             ->get();
 
-        // 3. Recent Activity Stream
+        // 6. Recent Activity Stream
         $recentActivities = ActivityLog::with('user')
             ->latest()
-            ->take(6)
+            ->take(8)
             ->get();
 
-        // 4. Latest Distribution Claims
+        // 7. Latest Distribution Claims
         $recentClaims = AyudaProjectClaim::with(['beneficiary', 'ayudaProgram', 'releasingOfficer'])
             ->latest('claimed_at')
-            ->take(6)
+            ->take(8)
             ->get();
 
         return view('livewire.dashboard.overview', array_merge($metrics, [
+            'barangayLeaderboard' => $barangayLeaderboard,
+            'disbursementTrends' => $disbursementTrends,
+            'demographics' => $demographics,
             'activePrograms' => $activePrograms,
             'recentActivities' => $recentActivities,
             'recentClaims' => $recentClaims,

@@ -112,22 +112,6 @@ class Login extends Component
         $this->addError('login', 'These credentials do not match our records or the account is inactive.');
     }
 
-    public function quickLogin(string $role): void
-    {
-        if (! $this->isLocalEnvironment) {
-            return;
-        }
-
-        $email = $role === 'SuperAdmin' ? 'superadmin@sulop.gov.ph' : 'admin@sulop.gov.ph';
-        $user = User::where('email', $email)->first();
-
-        if ($user) {
-            Auth::login($user, true);
-            session()->regenerate();
-            $this->redirect(route('dashboard'), navigate: true);
-        }
-    }
-
     public function render()
     {
         return view('livewire.auth.login');
