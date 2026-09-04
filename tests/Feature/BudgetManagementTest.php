@@ -242,4 +242,47 @@ class BudgetManagementTest extends TestCase
 
         $this->assertEquals(20000.00, (float) $funding->fresh()->remaining_balance);
     }
+
+    public function test_create_in_kind_goods_project_using_dedicated_inventory_fields(): void
+    {
+        $funding = FundingSource::create([
+            'funding_type' => FundingType::Private,
+            'title' => 'Private In-Kind & Goods Donations Pool 2026',
+            'source_code' => 'DON-GOODS-2026',
+            'office' => 'MSWDO / Warehouse',
+            'fiscal_year' => 2026,
+            'allocated_amount' => 150000.00,
+            'spent_amount' => 0.00,
+            'remaining_balance' => 150000.00,
+            'status' => 'Active',
+        ]);
+
+        Livewire::actingAs($this->admin)
+            ->test(Workspace::class)
+            ->call('openProjectModal')
+            ->set('newProjectFundingSourceId', $funding->id)
+            ->set('newProjectBenefitType', 'Goods')
+            ->call('nextStep')
+            ->assertSet('wizardStep', 2)
+            ->assertHasNoErrors(['newProjectBudgetCap'])
+            ->set('newProjectTitle', 'Typhoon Relief Rice Distribution')
+            ->set('newProjectItemName', 'Premium Well-Milled Rice (25kg)')
+            ->set('newProjectItemUnit', 'Sacks')
+            ->set('newProjectItemQty', 1)
+            ->set('newProjectTargetCount', 100)
+            ->assertSet('calculatedTotalGoodsQty', 100)
+            ->call('nextStep')
+            ->assertSet('wizardStep', 3)
+            ->call('createProject');
+
+        $this->assertDatabaseHas('ayuda_programs', [
+            'title' => 'Typhoon Relief Rice Distribution',
+            'benefit_type' => 'Goods',
+            'item_name' => 'Premium Well-Milled Rice (25kg)',
+            'item_unit' => 'Sacks',
+            'item_quantity_per_beneficiary' => 1,
+            'target_beneficiaries' => 100,
+            'funding_source_id' => $funding->id,
+        ]);
+    }
 }

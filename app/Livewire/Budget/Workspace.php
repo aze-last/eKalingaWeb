@@ -368,6 +368,15 @@ class Workspace extends Component
         return $unit * $count;
     }
 
+    #[Computed]
+    public function calculatedTotalGoodsQty(): int
+    {
+        $qty = max(1, (int) ($this->newProjectItemQty ?: 1));
+        $count = max(0, (int) ($this->newProjectTargetCount ?: 0));
+
+        return $qty * $count;
+    }
+
     public function getSelectedFundingSourceProperty(): ?FundingSource
     {
         return $this->selectedFundingSource;
@@ -376,6 +385,29 @@ class Workspace extends Component
     public function getCalculatedTotalCostProperty(): float
     {
         return $this->calculatedTotalCost;
+    }
+
+    public function getCalculatedTotalGoodsQtyProperty(): int
+    {
+        return $this->calculatedTotalGoodsQty;
+    }
+
+    public function updatedNewProjectBenefitType(string $val): void
+    {
+        if ($val === 'Goods') {
+            $this->newProjectUnitAmount = '0';
+            $this->newProjectItemQty = '1';
+            if (empty($this->newProjectItemUnit)) {
+                $this->newProjectItemUnit = 'Sacks';
+            }
+            $source = $this->selectedFundingSource;
+            $this->newProjectBudgetCap = (string) (float) ($source?->remaining_balance ?? 0);
+            $this->resetErrorBag('newProjectBudgetCap');
+        } else {
+            $this->newProjectUnitAmount = '5000';
+            $this->newProjectItemName = '';
+            $this->validateBudgetCapRealtime();
+        }
     }
 
     public function setBudgetCapToMax(): void
@@ -416,8 +448,26 @@ class Workspace extends Component
         $this->validateBudgetCapRealtime();
     }
 
+    public function updatedNewProjectTargetBarangay(?string $value): void
+    {
+        $this->candidateBarangay = $value ?: '';
+    }
+
+    public function updatedCandidateBarangay(?string $value): void
+    {
+        if (empty($this->newProjectTargetBarangay)) {
+            $this->newProjectTargetBarangay = $value ?: '';
+        }
+    }
+
     protected function validateBudgetCapRealtime(): void
     {
+        if ($this->newProjectBenefitType === 'Goods') {
+            $this->resetErrorBag('newProjectBudgetCap');
+
+            return;
+        }
+
         if (! $this->newProjectFundingSourceId || $this->newProjectBudgetCap === '') {
             return;
         }
@@ -476,14 +526,32 @@ class Workspace extends Component
             ]);
         }
         if ($step > 2) {
-            $source = FundingSource::find($this->newProjectFundingSourceId);
-            $maxBalance = $source ? (float) $source->remaining_balance : 0.00;
-            $this->validate([
-                'newProjectTitle' => 'required|string|min:3',
-                'newProjectBudgetCap' => "required|numeric|min:1|max:{$maxBalance}",
-            ], [
-                'newProjectBudgetCap.max' => 'Budget Cap cannot exceed the remaining balance of the selected funding source (₱'.number_format($maxBalance, 2).').',
-            ]);
+            if ($this->newProjectBenefitType === 'Goods') {
+                $this->validate([
+                    'newProjectTitle' => 'required|string|min:3',
+                    'newProjectItemName' => 'required|string|min:2',
+                    'newProjectItemUnit' => 'required|string|min:1',
+                    'newProjectItemQty' => 'required|integer|min:1',
+                    'newProjectTargetCount' => 'required|integer|min:1',
+                ], [
+                    'newProjectItemName.required' => 'Please enter the name of the goods or supplies item.',
+                    'newProjectItemUnit.required' => 'Please specify the unit (e.g. Sacks, Boxes, Packs, Kits).',
+                    'newProjectItemQty.required' => 'Please enter the item quantity per recipient.',
+                ]);
+                if (empty($this->newProjectBudgetCap)) {
+                    $source = FundingSource::find($this->newProjectFundingSourceId);
+                    $this->newProjectBudgetCap = (string) (float) ($source?->remaining_balance ?? 0);
+                }
+            } else {
+                $source = FundingSource::find($this->newProjectFundingSourceId);
+                $maxBalance = $source ? (float) $source->remaining_balance : 0.00;
+                $this->validate([
+                    'newProjectTitle' => 'required|string|min:3',
+                    'newProjectBudgetCap' => "required|numeric|min:1|max:{$maxBalance}",
+                ], [
+                    'newProjectBudgetCap.max' => 'Budget Cap cannot exceed the remaining balance of the selected funding source (₱'.number_format($maxBalance, 2).').',
+                ]);
+            }
         }
         $this->wizardStep = $step;
     }
@@ -497,16 +565,37 @@ class Workspace extends Component
             ]);
             $this->wizardStep = 2;
         } elseif ($this->wizardStep === 2) {
-            $source = FundingSource::find($this->newProjectFundingSourceId);
-            $maxBalance = $source ? (float) $source->remaining_balance : 0.00;
-            $this->validate([
-                'newProjectTitle' => 'required|string|min:3',
-                'newProjectBudgetCap' => "required|numeric|min:1|max:{$maxBalance}",
-            ], [
-                'newProjectBudgetCap.max' => 'Budget Cap cannot exceed the remaining balance of the selected funding source (₱'.number_format($maxBalance, 2).').',
-            ]);
+            if ($this->newProjectBenefitType === 'Goods') {
+                $this->validate([
+                    'newProjectTitle' => 'required|string|min:3',
+                    'newProjectItemName' => 'required|string|min:2',
+                    'newProjectItemUnit' => 'required|string|min:1',
+                    'newProjectItemQty' => 'required|integer|min:1',
+                    'newProjectTargetCount' => 'required|integer|min:1',
+                ], [
+                    'newProjectItemName.required' => 'Please enter the name of the goods or supplies item.',
+                    'newProjectItemUnit.required' => 'Please specify the unit (e.g. Sacks, Boxes, Packs, Kits).',
+                    'newProjectItemQty.required' => 'Please enter the item quantity per recipient.',
+                ]);
+                if (empty($this->newProjectBudgetCap)) {
+                    $source = FundingSource::find($this->newProjectFundingSourceId);
+                    $this->newProjectBudgetCap = (string) (float) ($source?->remaining_balance ?? 0);
+                }
+            } else {
+                $source = FundingSource::find($this->newProjectFundingSourceId);
+                $maxBalance = $source ? (float) $source->remaining_balance : 0.00;
+                $this->validate([
+                    'newProjectTitle' => 'required|string|min:3',
+                    'newProjectBudgetCap' => "required|numeric|min:1|max:{$maxBalance}",
+                ], [
+                    'newProjectBudgetCap.max' => 'Budget Cap cannot exceed the remaining balance of the selected funding source (₱'.number_format($maxBalance, 2).').',
+                ]);
+            }
             $this->wizardStep = 3;
         } elseif ($this->wizardStep === 3) {
+            if ($this->newProjectTargetBarangay && empty($this->candidateBarangay)) {
+                $this->candidateBarangay = $this->newProjectTargetBarangay;
+            }
             $this->wizardStep = 4;
         }
     }
@@ -638,10 +727,15 @@ class Workspace extends Component
     {
         $targetCount = max(1, (int) ($this->newProjectTargetCount ?: 50));
         $query = Beneficiary::query();
-        if ($this->candidateBarangay) {
-            $query->where('address', 'like', "%{$this->candidateBarangay}%");
-        } elseif ($this->newProjectTargetBarangay) {
-            $query->where('address', 'like', "%{$this->newProjectTargetBarangay}%");
+        $targetBrgy = $this->candidateBarangay ?: $this->newProjectTargetBarangay;
+        if ($targetBrgy) {
+            $query->where('address', 'like', "%{$targetBrgy}%");
+            if (empty($this->candidateBarangay)) {
+                $this->candidateBarangay = $targetBrgy;
+            }
+            if (empty($this->newProjectTargetBarangay)) {
+                $this->newProjectTargetBarangay = $targetBrgy;
+            }
         }
 
         $candidates = $query->take($targetCount)->get();
@@ -685,57 +779,74 @@ class Workspace extends Component
         $source = FundingSource::findOrFail($this->newProjectFundingSourceId);
         $maxBalance = (float) $source->remaining_balance;
 
-        $this->validate([
-            'newProjectFundingSourceId' => 'required|exists:funding_sources,id',
-            'newProjectTitle' => 'required|string|min:3',
-            'newProjectBudgetCap' => "required|numeric|min:1|max:{$maxBalance}",
-            'newProjectBenefitType' => 'required|in:Cash,Goods',
-        ], [
-            'newProjectBudgetCap.max' => 'Budget Cap cannot exceed the remaining balance of the selected funding source (₱'.number_format($maxBalance, 2).').',
-        ]);
+        if ($this->newProjectBenefitType === 'Goods') {
+            $this->validate([
+                'newProjectFundingSourceId' => 'required|exists:funding_sources,id',
+                'newProjectTitle' => 'required|string|min:3',
+                'newProjectBenefitType' => 'required|in:Cash,Goods',
+                'newProjectItemName' => 'required|string|min:2',
+                'newProjectItemUnit' => 'required|string|min:1',
+                'newProjectItemQty' => 'required|integer|min:1',
+            ]);
+            if (empty($this->newProjectBudgetCap)) {
+                $this->newProjectBudgetCap = (string) (float) $maxBalance;
+            }
+        } else {
+            $this->validate([
+                'newProjectFundingSourceId' => 'required|exists:funding_sources,id',
+                'newProjectTitle' => 'required|string|min:3',
+                'newProjectBudgetCap' => "required|numeric|min:1|max:{$maxBalance}",
+                'newProjectBenefitType' => 'required|in:Cash,Goods',
+            ], [
+                'newProjectBudgetCap.max' => 'Budget Cap cannot exceed the remaining balance of the selected funding source (₱'.number_format($maxBalance, 2).').',
+            ]);
+        }
 
         try {
-            $program = $budgetService->createAyudaProgram([
-                'funding_source_id' => $this->newProjectFundingSourceId,
-                'title' => $this->newProjectTitle,
-                'benefit_type' => $this->newProjectBenefitType,
-                'budget_cap' => (float) $this->newProjectBudgetCap,
-                'unit_amount' => (float) ($this->newProjectUnitAmount ?: 0),
-                'item_name' => $this->newProjectItemName,
-                'item_unit' => $this->newProjectItemUnit,
-                'item_quantity_per_beneficiary' => (int) ($this->newProjectItemQty ?: 1),
-                'target_beneficiaries' => count($this->selectedBeneficiaries) > 0 ? count($this->selectedBeneficiaries) : (int) ($this->newProjectTargetCount ?: 0),
-                'target_barangay' => $this->newProjectTargetBarangay ?: null,
-                'start_date' => $this->newProjectStartDate ?: now()->toDateString(),
-                'end_date' => $this->newProjectEndDate ?: null,
-                'description' => $this->newProjectDescription ?: null,
-            ]);
-
+            $program = null;
             $enrolledCount = 0;
 
-            // 1. Enrol manually selected candidates if any
-            if (! empty($this->selectedBeneficiaries)) {
-                foreach ($this->selectedBeneficiaries as $b) {
-                    DistributionEnrollment::firstOrCreate(
-                        [
-                            'ayuda_program_id' => $program->id,
-                            'civil_registry_id' => $b['civil_registry_id'],
-                        ],
-                        [
-                            'beneficiary_id' => $b['id'] ?? null,
-                            'household_no' => $b['household_no'] ?? null,
-                            'status' => DistributionStatus::PENDING,
-                            'enrolled_at' => now(),
-                        ]
-                    );
-                    $enrolledCount++;
-                }
-            } else {
-                // 2. Auto-enroll eligible citizens matching target count & target scope
-                try {
+            DB::transaction(function () use ($budgetService, &$program, &$enrolledCount) {
+                $effectiveTargetBarangay = $this->newProjectTargetBarangay ?: ($this->candidateBarangay ?: null);
+
+                $program = $budgetService->createAyudaProgram([
+                    'funding_source_id' => $this->newProjectFundingSourceId,
+                    'title' => $this->newProjectTitle,
+                    'benefit_type' => $this->newProjectBenefitType,
+                    'budget_cap' => (float) $this->newProjectBudgetCap,
+                    'unit_amount' => (float) ($this->newProjectUnitAmount ?: 0),
+                    'item_name' => $this->newProjectItemName,
+                    'item_unit' => $this->newProjectItemUnit,
+                    'item_quantity_per_beneficiary' => (int) ($this->newProjectItemQty ?: 1),
+                    'target_beneficiaries' => count($this->selectedBeneficiaries) > 0 ? count($this->selectedBeneficiaries) : (int) ($this->newProjectTargetCount ?: 0),
+                    'target_barangay' => $effectiveTargetBarangay,
+                    'start_date' => $this->newProjectStartDate ?: now()->toDateString(),
+                    'end_date' => $this->newProjectEndDate ?: null,
+                    'description' => $this->newProjectDescription ?: null,
+                ]);
+
+                // 1. Enrol manually selected candidates if any
+                if (! empty($this->selectedBeneficiaries)) {
+                    foreach ($this->selectedBeneficiaries as $b) {
+                        DistributionEnrollment::firstOrCreate(
+                            [
+                                'ayuda_program_id' => $program->id,
+                                'civil_registry_id' => $b['civil_registry_id'],
+                            ],
+                            [
+                                'beneficiary_id' => $b['id'] ?? null,
+                                'household_no' => $b['household_no'] ?? null,
+                                'status' => DistributionStatus::PENDING,
+                                'enrolled_at' => now(),
+                            ]
+                        );
+                        $enrolledCount++;
+                    }
+                } else {
+                    // 2. Auto-enroll eligible citizens matching target count & target scope
                     $query = Beneficiary::query();
-                    if ($this->newProjectTargetBarangay) {
-                        $query->where('address', 'like', "%{$this->newProjectTargetBarangay}%");
+                    if ($effectiveTargetBarangay) {
+                        $query->where('address', 'like', "%{$effectiveTargetBarangay}%");
                     }
                     $limit = max(1, (int) ($this->newProjectTargetCount ?: 50));
                     $autoBeneficiaries = $query->take($limit)->get();
@@ -756,10 +867,8 @@ class Workspace extends Component
                         );
                         $enrolledCount++;
                     }
-                } catch (\Throwable $e) {
-                    Log::error('Auto-enroll beneficiaries error: '.$e->getMessage());
                 }
-            }
+            });
 
             app(PerformanceCacheService::class)->clearFundingCache();
 
@@ -768,6 +877,8 @@ class Workspace extends Component
             $this->selectedBeneficiaries = [];
             $this->newProjectTitle = '';
             $this->newProjectBudgetCap = '';
+            $this->newProjectTargetBarangay = '';
+            $this->candidateBarangay = '';
             $this->activeTab = 'overview';
             $this->dispatch('play-audio-success');
             $this->dispatch('toast', type: 'success', message: "Created Ayuda Project {$program->program_code} with {$enrolledCount} enrolled beneficiaries.");
@@ -775,6 +886,8 @@ class Workspace extends Component
             Log::error('Create project error: '.$e->getMessage());
             $this->dispatch('play-audio-error');
             $this->dispatch('toast', type: 'error', message: $e->getMessage());
+
+            return;
         }
     }
 

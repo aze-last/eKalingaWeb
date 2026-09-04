@@ -58,15 +58,28 @@ class Workspace extends Component
 
     public string $pickerBarangay = '';
 
+    // Project Picker Modal State
+    public bool $showProjectPickerModal = false;
+
+    public string $projectPickerSearch = '';
+
+    public ?int $projectPickerHighlightedId = null;
+
     public function mount(): void
     {
-        $firstActive = AyudaProgram::where('status', ProgramStatus::Active)->first();
-        $this->selectedProjectId = $firstActive?->id;
+        // Show the project picker on first load rather than silently auto-selecting
+        // the first active program (requirement: project-first workflow).
+        if ($this->selectedProjectId === null) {
+            $this->showProjectPickerModal = true;
+        }
     }
 
     public function selectProject(int $id): void
     {
         $this->selectedProjectId = $id;
+        $this->showProjectPickerModal = false;
+        $this->projectPickerHighlightedId = null;
+        $this->projectPickerSearch = '';
         $this->resetPage('pendingPage');
         $this->resetPage('releasedPage');
         $this->resetPage('unreleasedPage');
@@ -255,6 +268,56 @@ class Workspace extends Component
         $this->isScannerLocked = false;
     }
 
+    // ------------------------------------------
+    // PROJECT PICKER MODAL
+    // ------------------------------------------
+
+    /**
+     * Open the project picker, pre-highlighting the currently selected project.
+     * Resets the search field so the full list is shown (requirement 4).
+     * Idempotent: calling while already open simply resets search (requirement 9).
+     */
+    public function openProjectPicker(): void
+    {
+        $this->projectPickerSearch = '';
+        $this->projectPickerHighlightedId = $this->selectedProjectId;
+        $this->showProjectPickerModal = true;
+    }
+
+    /**
+     * Cancel the picker without touching the currently selected project (requirement 8).
+     */
+    public function closeProjectPicker(): void
+    {
+        $this->showProjectPickerModal = false;
+        $this->projectPickerHighlightedId = null;
+    }
+
+    /**
+     * Highlight (single-click select) a row in the picker without confirming it.
+     */
+    public function highlightProject(int $id): void
+    {
+        $this->projectPickerHighlightedId = $id;
+    }
+
+    /**
+     * Confirm the highlighted project and close the picker.
+     * Delegates to selectProject() so pagination resets are preserved.
+     * No-op when nothing is highlighted (requirement 6).
+     */
+    public function confirmProjectSelection(): void
+    {
+        if ($this->projectPickerHighlightedId === null) {
+            return;
+        }
+
+        $this->selectProject($this->projectPickerHighlightedId);
+        $this->showProjectPickerModal = false;
+        $this->projectPickerHighlightedId = null;
+        $this->projectPickerSearch = '';
+    }
+
     public function enrollBeneficiary(int $beneficiaryId): void
     {
         $this->addBeneficiaryToProject($beneficiaryId);
@@ -341,11 +404,28 @@ class Workspace extends Component
         $this->dispatch('toast', type: 'success', message: "Enlisted {$enrolled} beneficiaries into {$program->program_code} distribution queue.");
     }
 
+    public function paginationView(): string
+    {
+        return 'components.pagination';
+    }
+
     public function render(PerformanceCacheService $cacheService)
     {
         $activeProjects = AyudaProgram::where('status', ProgramStatus::Active)
             ->orderBy('title')
             ->get();
+
+        // Filtered list for the project picker modal.
+        // Computed from the already-loaded collection — no extra DB query (requirement 1).
+        // Search matches both program_code and title, case-insensitively (requirement 5).
+        $pickerPrograms = $this->projectPickerSearch
+            ? $activeProjects->filter(function (AyudaProgram $p): bool {
+                $term = mb_strtolower($this->projectPickerSearch);
+
+                return str_contains(mb_strtolower($p->program_code), $term)
+                    || str_contains(mb_strtolower($p->title), $term);
+            })->values()
+            : $activeProjects;
 
         $currentProject = $this->selectedProjectId
             ? AyudaProgram::with('fundingSource')->find($this->selectedProjectId)
@@ -357,11 +437,22 @@ class Workspace extends Component
             ->where('status', DistributionStatus::PENDING);
 
         if ($this->pendingSearch) {
-            $pendingQuery->whereHas('beneficiary', function ($q) {
-                $q->where('first_name', 'like', "%{$this->pendingSearch}%")
-                    ->orWhere('last_name', 'like', "%{$this->pendingSearch}%")
-                    ->orWhere('civil_registry_id', 'like', "%{$this->pendingSearch}%")
-                    ->orWhere('household_no', 'like', "%{$this->pendingSearch}%");
+            $search = $this->pendingSearch;
+            $matchingIds = Beneficiary::where('first_name', 'like', "%{$search}%")
+                ->orWhere('last_name', 'like', "%{$search}%")
+                ->orWhere('full_name', 'like', "%{$search}%")
+                ->pluck('id')
+                ->toArray();
+
+            $pendingQuery->where(function ($q) use ($matchingIds, $search) {
+                if (! empty($matchingIds)) {
+                    $q->whereIn('beneficiary_id', $matchingIds)
+                        ->orWhere('civil_registry_id', 'like', "%{$search}%")
+                        ->orWhere('household_no', 'like', "%{$search}%");
+                } else {
+                    $q->where('civil_registry_id', 'like', "%{$search}%")
+                        ->orWhere('household_no', 'like', "%{$search}%");
+                }
             });
         }
         $pendingList = $pendingQuery->latest('enrolled_at')->paginate(10, ['*'], 'pendingPage');
@@ -371,10 +462,22 @@ class Workspace extends Component
             ->where('status', DistributionStatus::RELEASED);
 
         if ($this->releasedSearch) {
-            $releasedQuery->whereHas('beneficiary', function ($q) {
-                $q->where('first_name', 'like', "%{$this->releasedSearch}%")
-                    ->orWhere('last_name', 'like', "%{$this->releasedSearch}%")
-                    ->orWhere('civil_registry_id', 'like', "%{$this->releasedSearch}%");
+            $search = $this->releasedSearch;
+            $matchingIds = Beneficiary::where('first_name', 'like', "%{$search}%")
+                ->orWhere('last_name', 'like', "%{$search}%")
+                ->orWhere('full_name', 'like', "%{$search}%")
+                ->pluck('id')
+                ->toArray();
+
+            $releasedQuery->where(function ($q) use ($matchingIds, $search) {
+                if (! empty($matchingIds)) {
+                    $q->whereIn('beneficiary_id', $matchingIds)
+                        ->orWhere('civil_registry_id', 'like', "%{$search}%")
+                        ->orWhere('household_no', 'like', "%{$search}%");
+                } else {
+                    $q->where('civil_registry_id', 'like', "%{$search}%")
+                        ->orWhere('household_no', 'like', "%{$search}%");
+                }
             });
         }
         $releasedList = $releasedQuery->latest('processed_at')->paginate(10, ['*'], 'releasedPage');
@@ -384,9 +487,22 @@ class Workspace extends Component
             ->where('status', DistributionStatus::UNRELEASED);
 
         if ($this->unreleasedSearch) {
-            $unreleasedQuery->whereHas('beneficiary', function ($q) {
-                $q->where('first_name', 'like', "%{$this->unreleasedSearch}%")
-                    ->orWhere('last_name', 'like', "%{$this->unreleasedSearch}%");
+            $search = $this->unreleasedSearch;
+            $matchingIds = Beneficiary::where('first_name', 'like', "%{$search}%")
+                ->orWhere('last_name', 'like', "%{$search}%")
+                ->orWhere('full_name', 'like', "%{$search}%")
+                ->pluck('id')
+                ->toArray();
+
+            $unreleasedQuery->where(function ($q) use ($matchingIds, $search) {
+                if (! empty($matchingIds)) {
+                    $q->whereIn('beneficiary_id', $matchingIds)
+                        ->orWhere('civil_registry_id', 'like', "%{$search}%")
+                        ->orWhere('household_no', 'like', "%{$search}%");
+                } else {
+                    $q->where('civil_registry_id', 'like', "%{$search}%")
+                        ->orWhere('household_no', 'like', "%{$search}%");
+                }
             });
         }
         $unreleasedList = $unreleasedQuery->latest('processed_at')->paginate(10, ['*'], 'unreleasedPage');
@@ -418,6 +534,7 @@ class Workspace extends Component
 
         return view('livewire.distribution.workspace', [
             'activeProjects' => $activeProjects,
+            'pickerPrograms' => $pickerPrograms,
             'currentProject' => $currentProject,
             'pendingList' => $pendingList,
             'releasedList' => $releasedList,

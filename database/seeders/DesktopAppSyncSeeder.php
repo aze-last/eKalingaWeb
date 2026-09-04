@@ -13,7 +13,6 @@ use App\Models\FundingSource;
 use App\Models\GgmsConsolidatedTransaction;
 use App\Models\User;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Hash;
 use PDO;
 
 class DesktopAppSyncSeeder extends Seeder
@@ -25,7 +24,7 @@ class DesktopAppSyncSeeder extends Seeder
             [
                 'name' => 'System Administrator',
                 'email' => 'admin@barangay.local',
-                'password' => Hash::make('password'),
+                'password' => 'password',
                 'role' => 'SuperAdmin',
                 'is_active' => true,
             ]
@@ -44,7 +43,7 @@ class DesktopAppSyncSeeder extends Seeder
                 [
                     'name' => $u['name'],
                     'email' => $u['email'],
-                    'password' => Hash::make('password'),
+                    'password' => 'password',
                     'role' => $u['role'],
                     'is_active' => true,
                 ]

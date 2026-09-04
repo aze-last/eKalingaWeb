@@ -823,7 +823,7 @@
                                     </div>
                                 </div>
                                 <div class="text-right">
-                                    <p class="text-[10px] text-slate-400 font-bold uppercase">Pool Balance Limit</p>
+                                    <p class="text-[10px] text-slate-400 font-bold uppercase">Pool Allocation Balance</p>
                                     <p class="font-mono font-black text-brand text-xs">₱{{ number_format($sourceBal, 2) }}</p>
                                 </div>
                             </div>
@@ -831,127 +831,177 @@
 
                         <div>
                             <label class="block font-bold text-slate-600 mb-1">Project Title *</label>
-                            <input type="text" wire:model="newProjectTitle" placeholder="e.g. Sulop Indigent Emergency Aid 2026" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-neutral-strong font-medium">
+                            <input type="text" wire:model="newProjectTitle" placeholder="{{ $newProjectBenefitType === 'Goods' ? 'e.g. 2026 Calamity Rice & Food Pack Relief' : 'e.g. Sulop Indigent Emergency Cash Aid 2026' }}" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-neutral-strong font-medium">
                             @error('newProjectTitle') <p class="text-rose-600 font-bold text-[11px] mt-1">{{ $message }}</p> @enderror
                         </div>
 
-                        <!-- Budget Cap Input with Live Listener & Max Auto-Fill -->
-                        <div>
-                            <div class="flex items-center justify-between mb-1">
-                                <label class="block font-bold text-slate-600">Budget Cap (₱) *</label>
-                                @if($sourceBal > 0)
-                                    <button 
-                                        type="button" 
-                                        wire:click="setBudgetCapToMax" 
-                                        class="text-[11px] font-bold text-brand hover:underline cursor-pointer flex items-center gap-1"
-                                        title="Auto-fill with maximum available pool balance (₱{{ number_format($sourceBal, 2) }})"
-                                    >
-                                        <span>Use Max Available (₱{{ number_format($sourceBal, 2) }})</span>
-                                    </button>
-                                @endif
-                            </div>
-                            <input 
-                                type="number" 
-                                step="0.01" 
-                                wire:model.live.debounce.250ms="newProjectBudgetCap" 
-                                placeholder="e.g. {{ $sourceBal > 0 ? number_format($sourceBal, 2, '.', '') : '50000.00' }}" 
-                                class="w-full bg-white border {{ $isCapExceeded ? 'border-rose-500 ring-1 ring-rose-500' : 'border-slate-300' }} rounded-lg px-3 py-2 text-neutral-strong font-mono font-bold"
-                            >
-                            @error('newProjectBudgetCap') 
-                                <p class="text-rose-600 font-bold text-[11px] mt-1">{{ $message }}</p> 
-                            @enderror
+                        @if($newProjectBenefitType === 'Goods')
+                            <!-- DEDICATED IN-KIND GOODS & SUPPLIES SPECIFICATION -->
+                            <div class="p-3.5 rounded-xl bg-emerald-50/40 border border-emerald-200/80 space-y-3">
+                                <div class="flex items-center gap-2 text-brand">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                                    <span class="font-bold uppercase tracking-wider text-[11px]">In-Kind Package & Inventory Allocation</span>
+                                </div>
 
-                            <!-- Real-time Budget Cap Feedback Box -->
-                            @if($enteredCap > 0)
-                                <div class="mt-2 p-2.5 rounded-lg border {{ $isCapExceeded ? 'bg-rose-50 border-rose-200 text-rose-800' : 'bg-emerald-50/70 border-emerald-200 text-slate-700' }} space-y-1.5">
-                                    <div class="flex items-center justify-between text-[11px] font-bold">
-                                        <span>
-                                            @if($isCapExceeded)
-                                                ⚠️ Exceeds Available Pool Balance!
-                                            @else
-                                                ✓ Budget Cap within Pool Limit ({{ $capUsagePct }}% of pool)
-                                            @endif
-                                        </span>
-                                        <span class="font-mono">
-                                            @if($isCapExceeded)
-                                                Over by ₱{{ number_format($enteredCap - $sourceBal, 2) }}
-                                            @else
-                                                Leaves ₱{{ number_format($sourceBal - $enteredCap, 2) }}
-                                            @endif
-                                        </span>
+                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                    <div class="sm:col-span-2">
+                                        <label class="block font-bold text-slate-600 mb-1">Item / Package Name *</label>
+                                        <input type="text" wire:model="newProjectItemName" placeholder="e.g. Premium Well-Milled Rice (25kg)" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-neutral-strong font-medium">
+                                        @error('newProjectItemName') <p class="text-rose-600 font-bold text-[11px] mt-1">{{ $message }}</p> @enderror
                                     </div>
-                                    <div class="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden">
-                                        <div 
-                                            class="h-1.5 rounded-full transition-all duration-300 {{ $isCapExceeded ? 'bg-rose-600' : 'bg-brand' }}" 
-                                            style="width: {{ min(100, $capUsagePct) }}%"
-                                        ></div>
+                                    <div>
+                                        <label class="block font-bold text-slate-600 mb-1">Unit of Measure *</label>
+                                        <input type="text" wire:model="newProjectItemUnit" placeholder="e.g. Sacks, Boxes, Packs, Kits" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-neutral-strong font-medium">
+                                        @error('newProjectItemUnit') <p class="text-rose-600 font-bold text-[11px] mt-1">{{ $message }}</p> @enderror
                                     </div>
                                 </div>
-                            @endif
-                        </div>
 
-                        <!-- Unit Benefit & Target Beneficiaries -->
-                        <div class="grid grid-cols-2 gap-3">
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="block font-bold text-slate-600 mb-1">Qty per Beneficiary *</label>
+                                        <input 
+                                            type="number" 
+                                            min="1" 
+                                            wire:model.live.debounce.250ms="newProjectItemQty" 
+                                            placeholder="1" 
+                                            class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-neutral-strong font-mono font-bold"
+                                        >
+                                        @error('newProjectItemQty') <p class="text-rose-600 font-bold text-[11px] mt-1">{{ $message }}</p> @enderror
+                                    </div>
+                                    <div>
+                                        <label class="block font-bold text-slate-600 mb-1">Target Beneficiary Count *</label>
+                                        <input 
+                                            type="number" 
+                                            min="1" 
+                                            wire:model.live.debounce.250ms="newProjectTargetCount" 
+                                            placeholder="50" 
+                                            class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-neutral-strong font-mono font-bold"
+                                        >
+                                        @error('newProjectTargetCount') <p class="text-rose-600 font-bold text-[11px] mt-1">{{ $message }}</p> @enderror
+                                    </div>
+                                </div>
+
+                                <!-- Live Goods Total Calculation Banner -->
+                                <div class="p-3 rounded-lg bg-white border border-emerald-200 flex items-center justify-between">
+                                    <div>
+                                        <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Total Goods Distribution Requirement</p>
+                                        <p class="font-mono text-neutral-strong text-xs mt-0.5">
+                                            {{ $newProjectTargetCount ?: 0 }} recipients × {{ $newProjectItemQty ?: 1 }} {{ $newProjectItemUnit ?: 'units' }} = 
+                                            <span class="text-brand font-black text-sm">{{ $this->calculatedTotalGoodsQty }} {{ $newProjectItemUnit ?: 'units' }} total</span>
+                                        </p>
+                                    </div>
+                                    <span class="px-2.5 py-1 rounded-md text-[11px] font-bold bg-emerald-50 text-brand border border-emerald-200">
+                                        📦 In-Kind Mode
+                                    </span>
+                                </div>
+                            </div>
+                        @else
+                            <!-- CASH BENEFIT FIELDS -->
+                            <!-- Budget Cap Input with Live Listener & Max Auto-Fill -->
                             <div>
-                                <label class="block font-bold text-slate-600 mb-1">Unit Benefit (₱) per Beneficiary</label>
+                                <div class="flex items-center justify-between mb-1">
+                                    <label class="block font-bold text-slate-600">Budget Cap (₱) *</label>
+                                    @if($sourceBal > 0)
+                                        <button 
+                                            type="button" 
+                                            wire:click="setBudgetCapToMax" 
+                                            class="text-[11px] font-bold text-brand hover:underline cursor-pointer flex items-center gap-1"
+                                            title="Auto-fill with maximum available pool balance (₱{{ number_format($sourceBal, 2) }})"
+                                        >
+                                            <span>Use Max Available (₱{{ number_format($sourceBal, 2) }})</span>
+                                        </button>
+                                    @endif
+                                </div>
                                 <input 
                                     type="number" 
                                     step="0.01" 
-                                    wire:model.live.debounce.250ms="newProjectUnitAmount" 
-                                    placeholder="e.g. 5000.00" 
-                                    class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-neutral-strong font-mono"
+                                    wire:model.live.debounce.250ms="newProjectBudgetCap" 
+                                    placeholder="e.g. {{ $sourceBal > 0 ? number_format($sourceBal, 2, '.', '') : '50000.00' }}" 
+                                    class="w-full bg-white border {{ $isCapExceeded ? 'border-rose-500 ring-1 ring-rose-500' : 'border-slate-300' }} rounded-lg px-3 py-2 text-neutral-strong font-mono font-bold"
                                 >
-                            </div>
-                            <div>
-                                <label class="block font-bold text-slate-600 mb-1">Target Beneficiary Count</label>
-                                <input 
-                                    type="number" 
-                                    wire:model.live.debounce.250ms="newProjectTargetCount" 
-                                    placeholder="e.g. 50" 
-                                    class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-neutral-strong font-mono"
-                                >
-                            </div>
-                        </div>
+                                @error('newProjectBudgetCap') 
+                                    <p class="text-rose-600 font-bold text-[11px] mt-1">{{ $message }}</p> 
+                                @enderror
 
-                        <!-- Live Cost Multiplier & Sync Helper -->
-                        @if($calcTotal > 0)
-                            <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs">
-                                <div>
-                                    <p class="text-[10px] text-slate-500 font-bold uppercase">Estimated Total Payout Calculation</p>
-                                    <p class="font-mono text-neutral-strong text-xs font-bold">
-                                        {{ $newProjectTargetCount }} recipients × ₱{{ number_format((float) ($newProjectUnitAmount ?: 0), 2) }} = 
-                                        <span class="{{ $calcTotal > $sourceBal ? 'text-rose-600' : 'text-brand' }}">₱{{ number_format($calcTotal, 2) }}</span>
-                                    </p>
-                                </div>
-                                @if(abs($calcTotal - $enteredCap) > 0.01 && $calcTotal <= $sourceBal)
-                                    <button 
-                                        type="button" 
-                                        wire:click="syncBudgetCapWithCalculated" 
-                                        class="px-2.5 py-1 rounded bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-900 font-bold text-[10px] transition-colors cursor-pointer shrink-0"
-                                        title="Set the Budget Cap to exactly match the calculated payout (₱{{ number_format($calcTotal, 2) }})"
-                                    >
-                                        Apply ₱{{ number_format($calcTotal, 2) }} to Cap
-                                    </button>
+                                <!-- Real-time Budget Cap Feedback Box -->
+                                @if($enteredCap > 0)
+                                    <div class="mt-2 p-2.5 rounded-lg border {{ $isCapExceeded ? 'bg-rose-50 border-rose-200 text-rose-800' : 'bg-emerald-50/70 border-emerald-200 text-slate-700' }} space-y-1.5">
+                                        <div class="flex items-center justify-between text-[11px] font-bold">
+                                            <span>
+                                                @if($isCapExceeded)
+                                                    ⚠️ Exceeds Available Pool Balance!
+                                                @else
+                                                    ✓ Budget Cap within Pool Limit ({{ $capUsagePct }}% of pool)
+                                                @endif
+                                            </span>
+                                            <span class="font-mono">
+                                                @if($isCapExceeded)
+                                                    Over by ₱{{ number_format($enteredCap - $sourceBal, 2) }}
+                                                @else
+                                                    Leaves ₱{{ number_format($sourceBal - $enteredCap, 2) }}
+                                                @endif
+                                            </span>
+                                        </div>
+                                        <div class="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden">
+                                            <div 
+                                                class="h-1.5 rounded-full transition-all duration-300 {{ $isCapExceeded ? 'bg-rose-600' : 'bg-brand' }}" 
+                                                style="width: {{ min(100, $capUsagePct) }}%"
+                                            ></div>
+                                        </div>
+                                    </div>
                                 @endif
                             </div>
-                        @endif
 
-                        @if($newProjectBenefitType === 'Goods')
-                            <div class="grid grid-cols-3 gap-3">
-                                <div class="col-span-2">
-                                    <label class="block font-bold text-slate-600 mb-1">Item Name</label>
-                                    <input type="text" wire:model="newProjectItemName" placeholder="e.g. Rice 25kg" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-neutral-strong">
+                            <!-- Unit Benefit & Target Beneficiaries -->
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block font-bold text-slate-600 mb-1">Unit Benefit (₱) per Beneficiary</label>
+                                    <input 
+                                        type="number" 
+                                        step="0.01" 
+                                        wire:model.live.debounce.250ms="newProjectUnitAmount" 
+                                        placeholder="e.g. 5000.00" 
+                                        class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-neutral-strong font-mono"
+                                    >
                                 </div>
                                 <div>
-                                    <label class="block font-bold text-slate-600 mb-1">Unit</label>
-                                    <input type="text" wire:model="newProjectItemUnit" placeholder="e.g. Sacks" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-neutral-strong">
+                                    <label class="block font-bold text-slate-600 mb-1">Target Beneficiary Count</label>
+                                    <input 
+                                        type="number" 
+                                        wire:model.live.debounce.250ms="newProjectTargetCount" 
+                                        placeholder="e.g. 50" 
+                                        class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-neutral-strong font-mono"
+                                    >
                                 </div>
                             </div>
+
+                            <!-- Live Cost Multiplier & Sync Helper -->
+                            @if($calcTotal > 0)
+                                <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs">
+                                    <div>
+                                        <p class="text-[10px] text-slate-500 font-bold uppercase">Estimated Total Payout Calculation</p>
+                                        <p class="font-mono text-neutral-strong text-xs font-bold">
+                                            {{ $newProjectTargetCount }} recipients × ₱{{ number_format((float) ($newProjectUnitAmount ?: 0), 2) }} = 
+                                            <span class="{{ $calcTotal > $sourceBal ? 'text-rose-600' : 'text-brand' }}">₱{{ number_format($calcTotal, 2) }}</span>
+                                        </p>
+                                    </div>
+                                    @if(abs($calcTotal - $enteredCap) > 0.01 && $calcTotal <= $sourceBal)
+                                        <button 
+                                            type="button" 
+                                            wire:click="syncBudgetCapWithCalculated" 
+                                            class="px-2.5 py-1 rounded bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-900 font-bold text-[10px] transition-colors cursor-pointer shrink-0"
+                                            title="Set the Budget Cap to exactly match the calculated payout (₱{{ number_format($calcTotal, 2) }})"
+                                        >
+                                            Apply ₱{{ number_format($calcTotal, 2) }} to Cap
+                                        </button>
+                                    @endif
+                                </div>
+                            @endif
                         @endif
 
                         <div>
                             <label class="block font-bold text-slate-600 mb-1">Target Barangay (Scope)</label>
-                            <select wire:model="newProjectTargetBarangay" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-neutral-strong" title="Filter target municipality scope">
+                            <select wire:model.live="newProjectTargetBarangay" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-neutral-strong" title="Filter target municipality scope">
                                 <option value="">Municipality-Wide</option>
                                 @foreach($barangays as $brgy)
                                     <option value="{{ $brgy }}">{{ $brgy }}</option>
@@ -983,17 +1033,36 @@
                                 <span class="font-bold text-neutral-strong">{{ $newProjectTitle }}</span>
                             </div>
                             <div class="flex justify-between">
-                                <span class="text-slate-500">Earmarked Budget Cap:</span>
-                                <span class="font-mono font-bold text-brand">₱{{ number_format($enteredCap, 2) }}</span>
+                                <span class="text-slate-500">Benefit Type:</span>
+                                <span class="font-bold {{ $newProjectBenefitType === 'Goods' ? 'text-brand' : 'text-neutral-strong' }}">
+                                    {{ $newProjectBenefitType === 'Goods' ? '📦 In-Kind Goods / Supplies' : '💵 Direct Cash Assistance' }}
+                                </span>
                             </div>
-                            <div class="flex justify-between">
-                                <span class="text-slate-500">Available Pool Balance After Earmark:</span>
-                                <span class="font-mono font-bold text-slate-700">₱{{ number_format(max(0, $sourceBal - $enteredCap), 2) }}</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-slate-500">Unit Amount:</span>
-                                <span class="font-mono text-neutral-strong">₱{{ number_format((float) ($newProjectUnitAmount ?: 0), 2) }} / recipient</span>
-                            </div>
+
+                            @if($newProjectBenefitType === 'Goods')
+                                <div class="flex justify-between">
+                                    <span class="text-slate-500">Aid Package per Beneficiary:</span>
+                                    <span class="font-bold text-brand">{{ $newProjectItemQty }} {{ $newProjectItemUnit }} {{ $newProjectItemName }}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-slate-500">Total Distribution Volume:</span>
+                                    <span class="font-mono font-bold text-neutral-strong">{{ $this->calculatedTotalGoodsQty }} {{ $newProjectItemUnit }} Total</span>
+                                </div>
+                            @else
+                                <div class="flex justify-between">
+                                    <span class="text-slate-500">Earmarked Budget Cap:</span>
+                                    <span class="font-mono font-bold text-brand">₱{{ number_format($enteredCap, 2) }}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-slate-500">Available Pool Balance After Earmark:</span>
+                                    <span class="font-mono font-bold text-slate-700">₱{{ number_format(max(0, $sourceBal - $enteredCap), 2) }}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-slate-500">Unit Amount:</span>
+                                    <span class="font-mono text-neutral-strong">₱{{ number_format((float) ($newProjectUnitAmount ?: 0), 2) }} / recipient</span>
+                                </div>
+                            @endif
+
                             <div class="flex justify-between">
                                 <span class="text-slate-500">Target Coverage:</span>
                                 <span class="font-medium text-slate-700">{{ $newProjectTargetBarangay ?: 'Municipality-Wide' }} ({{ $newProjectTargetCount }} slots)</span>

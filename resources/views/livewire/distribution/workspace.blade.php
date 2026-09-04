@@ -24,12 +24,22 @@
                 wire:model.live="selectedProjectId"
                 class="bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs text-neutral-strong font-bold focus:outline-none focus:ring-1 focus:ring-brand cursor-pointer"
             >
+                <option value="">-- Select a Project --</option>
                 @foreach($activeProjects as $proj)
                     <option value="{{ $proj->id }}">
                         {{ $proj->program_code }} - {{ $proj->title }}
                     </option>
                 @endforeach
             </select>
+
+            <button
+                wire:click="openProjectPicker"
+                class="px-3.5 py-2 rounded-lg {{ $selectedProjectId ? 'bg-slate-100 hover:bg-slate-200 text-neutral-strong border border-slate-200' : 'bg-brand hover:bg-emerald-800 text-white border border-emerald-700' }} text-xs font-bold transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs"
+                title="Open project search picker"
+            >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                <span>{{ $selectedProjectId ? 'Change Project' : 'Select Project' }}</span>
+            </button>
 
             <button 
                 wire:click="openBeneficiaryPicker"
@@ -151,7 +161,7 @@
                 </div>
 
                 <div class="pt-3 border-t border-slate-100 text-xs">
-                    {{ $releasedList->links() }}
+                    {{ $releasedList->links('components.pagination') }}
                 </div>
             </div>
 
@@ -252,7 +262,7 @@
                 </div>
 
                 <div class="pt-3 border-t border-slate-100 text-xs">
-                    {{ $pendingList->links() }}
+                    {{ $pendingList->links('components.pagination') }}
                 </div>
             </div>
 
@@ -315,14 +325,130 @@
                 </div>
 
                 <div class="pt-3 border-t border-slate-100 text-xs">
-                    {{ $unreleasedList->links() }}
+                    {{ $unreleasedList->links('components.pagination') }}
                 </div>
             </div>
         </div>
     @else
-        <div class="bg-surface border border-slate-200 rounded-xl p-12 text-center text-slate-500 text-sm">
-            Please select or create an active Ayuda Program to launch the POS distribution terminal.
+        <div class="bg-surface border border-slate-200 rounded-xl p-12 text-center space-y-5">
+            <div class="w-14 h-14 mx-auto rounded-2xl bg-emerald-50 border border-emerald-200 text-brand flex items-center justify-center">
+                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+            </div>
+            <div>
+                <p class="font-bold text-neutral-strong text-sm">No Active Project Selected</p>
+                <p class="text-xs text-slate-500 mt-1">Select an active Ayuda Program to launch the POS distribution terminal.</p>
+            </div>
+            <button
+                wire:click="openProjectPicker"
+                class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand hover:bg-emerald-800 text-white text-xs font-bold shadow-xs cursor-pointer transition-colors"
+            >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                Select Project
+            </button>
         </div>
+    @endif
+
+    <!-- MODAL 1: PROJECT PICKER -->
+    @if($showProjectPickerModal)
+    <div
+        x-data
+        @keydown.escape.window="$wire.closeProjectPicker()"
+        @keydown.enter.window="$wire.confirmProjectSelection()"
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0F172A]/85 backdrop-blur-md animate-fadeIn"
+    >
+        <div class="w-full max-w-lg bg-white border border-slate-200 rounded-2xl shadow-xl flex flex-col text-neutral-strong" style="max-height: 80vh;">
+
+            <!-- Header -->
+            <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100 shrink-0">
+                <div class="flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-brand"></span>
+                    <h3 class="text-base font-bold text-brand">Select Active Project</h3>
+                </div>
+                <button wire:click="closeProjectPicker" class="text-slate-400 hover:text-neutral-strong text-xl font-bold cursor-pointer" title="Cancel (Esc)">&times;</button>
+            </div>
+
+            <!-- Search Field (auto-focused when modal opens) -->
+            <div class="px-5 py-3 border-b border-slate-100 shrink-0">
+                <div class="relative">
+                    <svg class="absolute left-3 top-2.5 w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                    <input
+                        wire:model.live.debounce.200ms="projectPickerSearch"
+                        type="text"
+                        id="project-picker-search"
+                        placeholder="Search by project name or code..."
+                        class="w-full bg-white border border-slate-300 rounded-lg pl-9 pr-8 py-2 text-xs text-neutral-strong placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-brand"
+                        x-init="setTimeout(() => $el.focus(), 50)"
+                        autocomplete="off"
+                    >
+                    <div wire:loading wire:target="projectPickerSearch" class="absolute right-2.5 top-2.5">
+                        <svg class="animate-spin h-3.5 w-3.5 text-brand" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Program List: click to highlight, double-click to confirm (requirement 7) -->
+            <div class="flex-1 overflow-y-auto min-h-0 divide-y divide-slate-100">
+                @forelse($pickerPrograms as $proj)
+                    <div
+                        wire:click="highlightProject({{ $proj->id }})"
+                        wire:dblclick="selectProject({{ $proj->id }})"
+                        class="flex items-center gap-3 px-5 py-3.5 cursor-pointer transition-colors select-none
+                            {{ $projectPickerHighlightedId === $proj->id
+                                ? 'bg-emerald-50 border-l-4 border-brand'
+                                : 'hover:bg-slate-50 border-l-4 border-transparent' }}"
+                    >
+                        <div class="flex-1 min-w-0">
+                            <p class="font-bold text-neutral-strong text-xs truncate">{{ $proj->title }}</p>
+                            <p class="text-[10px] text-slate-500 font-mono mt-0.5">
+                                {{ $proj->program_code }}
+                                &middot; {{ $proj->target_beneficiaries }} slots
+                                &middot; {{ $proj->target_barangay ?: 'Municipality-Wide' }}
+                            </p>
+                        </div>
+                        @if($projectPickerHighlightedId === $proj->id)
+                            <svg class="w-4 h-4 text-brand shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                        @endif
+                    </div>
+                @empty
+                    <div class="text-center py-12 text-slate-400 text-xs font-medium">
+                        @if($projectPickerSearch)
+                            No active projects match &ldquo;{{ $projectPickerSearch }}&rdquo;.
+                        @else
+                            No active Ayuda Programs found. Create one in Budget Management first.
+                        @endif
+                    </div>
+                @endforelse
+            </div>
+
+            <!-- Footer -->
+            <div class="flex items-center justify-between px-5 py-3.5 border-t border-slate-100 shrink-0 bg-slate-50/60 rounded-b-2xl">
+                <span class="text-[10px] text-slate-400 font-mono">{{ $pickerPrograms->count() }} active program(s)</span>
+                <div class="flex items-center gap-2">
+                    <button
+                        type="button"
+                        wire:click="closeProjectPicker"
+                        class="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold cursor-pointer transition-colors"
+                    >
+                        Cancel
+                    </button>
+                    <!-- Disabled when no row is highlighted (requirement 6) -->
+                    <button
+                        type="button"
+                        wire:click="confirmProjectSelection"
+                        wire:loading.attr="disabled"
+                        wire:target="confirmProjectSelection"
+                        @disabled($projectPickerHighlightedId === null)
+                        class="px-5 py-2 rounded-lg bg-brand hover:bg-emerald-800 text-white text-xs font-bold cursor-pointer shadow-xs transition-colors flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        <svg wire:loading wire:target="confirmProjectSelection" class="animate-spin h-3 w-3 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+                        <span wire:loading.remove wire:target="confirmProjectSelection">Select Project</span>
+                        <span wire:loading wire:target="confirmProjectSelection">Loading...</span>
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
     @endif
 
     <!-- MODAL 2: HOUSEHOLD DUPLICATE WARNING MODAL -->

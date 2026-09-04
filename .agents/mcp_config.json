@@ -6,6 +6,12 @@
                 "artisan",
                 "boost:mcp"
             ]
+        },
+        "sentry": {
+            "serverUrl": "https://mcp.sentry.dev/mcp",
+            "headers": {
+                "Authorization": "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"
+            }
         }
     }
 }

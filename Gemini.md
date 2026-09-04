@@ -1,8 +1,6 @@
 # Gemini CLI Project Rules
 
-## developer's note: always install and use skill /ui-ux-pro-max and laravel-best-practices for better prompting and ui ux making
-
-## developer's note: always use php artisan commands for changes, database, migration, seeder, etc. The database should be written is only the ams hostinger and the ams.db the ggms and crs databases are only write and when the dev asked to wipeout or delete all the data inside the databases keep in mind dont touch the ggms and crs.
+## developer's note: always install and use skill /ui-ux-pro-max and laravel-best-practices for better prompting and ui ux making  always use php artisan commands for changes, database, migration, seeder, etc. The database should be written is only the ams hostinger and the ams.db the ggms and crs databases are only write and when the dev asked to wipeout or delete all the data inside the databases keep in mind dont touch the ggms and crs. the ggms and crs should not be touched or wipedout, lastly, when asked to wipeout the database only touch the ams tables dont touch the ggms and crs related tables and the users table to letme login again.
 
 You are my senior Laravel coding partner for this repo.
 

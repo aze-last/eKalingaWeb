@@ -21,7 +21,6 @@ use App\Models\GgmsProjectCache;
 use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Hash;
 
 class SulopMunicipalSeeder extends Seeder
 {
@@ -48,22 +47,22 @@ class SulopMunicipalSeeder extends Seeder
 
         // 2. Seed Users
         $superAdmin = User::updateOrCreate(
-            ['email' => 'superadmin@sulop.gov.ph'],
+            ['username' => 'superadmin'],
             [
                 'name' => 'Municipal Super Admin',
-                'username' => 'superadmin',
-                'password' => Hash::make('password'),
+                'email' => 'superadmin@sulop.gov.ph',
+                'password' => 'password',
                 'role' => UserRole::SuperAdmin,
                 'is_active' => true,
             ]
         );
 
         $admin = User::updateOrCreate(
-            ['email' => 'admin@sulop.gov.ph'],
+            ['username' => 'admin'],
             [
                 'name' => 'MSWDO Aid Administrator',
-                'username' => 'admin',
-                'password' => Hash::make('password'),
+                'email' => 'admin@sulop.gov.ph',
+                'password' => 'password',
                 'role' => UserRole::Admin,
                 'is_active' => true,
             ]
