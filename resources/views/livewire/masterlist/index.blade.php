@@ -154,8 +154,35 @@
                             <td class="px-4 py-3.5 font-mono text-slate-600">
                                 {{ $ben->household_no ?? 'N/A' }}
                             </td>
-                            <td class="px-4 py-3.5 text-slate-600">
-                                {{ isset($ben->birth_date) ? (\Carbon\Carbon::hasFormat($ben->birth_date, 'Y-m-d') ? \Carbon\Carbon::parse($ben->birth_date)->format('M d, Y') : $ben->birth_date) : ($ben->birthdate ?? '—') }}
+                            <td class="px-4 py-3.5 text-slate-600 leading-tight">
+                                @php
+                                    $dobFormatted = null;
+                                    $rawBirth = $ben->birth_date;
+                                    if ($rawBirth) {
+                                        try {
+                                            $dobFormatted = \Carbon\Carbon::parse($rawBirth)->format('M d, Y');
+                                        } catch (\Throwable) {
+                                            $dobFormatted = $rawBirth;
+                                        }
+                                    }
+                                    $ageVal = $ben->age;
+                                    $isSeniorVal = $ben->is_senior;
+                                @endphp
+
+                                @if($dobFormatted)
+                                    <div class="font-medium text-slate-800">{{ $dobFormatted }}</div>
+                                    @if($ageVal !== null)
+                                        <div class="text-[11px] {{ $isSeniorVal ? 'text-amber-700 font-semibold' : 'text-slate-500' }}">
+                                            ({{ $ageVal }} yrs{{ $isSeniorVal ? ' · Senior' : '' }})
+                                        </div>
+                                    @endif
+                                @elseif($ageVal !== null)
+                                    <div class="text-[11px] {{ $isSeniorVal ? 'text-amber-700 font-semibold' : 'text-slate-700 font-medium' }}">
+                                        {{ $ageVal }} yrs{{ $isSeniorVal ? ' · Senior' : '' }}
+                                    </div>
+                                @else
+                                    <span class="text-slate-400">—</span>
+                                @endif
                             </td>
                             <td class="px-4 py-3.5 font-mono text-slate-600">
                                 {{ $ben->contact_no ?? $ben->contact_number ?? $ben->phone_no ?? '—' }}

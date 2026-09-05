@@ -26,6 +26,10 @@ abstract class TestCase extends BaseTestCase
                         $table->string('barangay')->nullable();
                         $table->string('gender')->nullable();
                         $table->date('birth_date')->nullable();
+                        $table->date('date_of_birth')->nullable();
+                        $table->integer('age')->nullable();
+                        $table->tinyInteger('is_senior')->default(0);
+                        $table->tinyInteger('is_pwd')->default(0);
                         $table->string('contact_no')->nullable();
                         $table->text('address')->nullable();
                         $table->tinyInteger('IsDeleted')->default(0);

@@ -117,4 +117,60 @@ class MasterlistModuleTest extends TestCase
         $response->assertSee('Cash For Work');
         $response->assertSee('7,500.00'); // 3000 + 4500 total
     }
+
+    public function test_masterlist_displays_birthdate_age_and_senior_status(): void
+    {
+        // 1. Regular resident aged 43
+        Beneficiary::create([
+            'civil_registry_id' => 'CRN-AGE-43',
+            'household_no' => 'HH-AGE-1',
+            'first_name' => 'Juan',
+            'last_name' => 'Adult',
+            'barangay' => 'Poblacion',
+            'date_of_birth' => now()->subYears(43)->toDateString(),
+            'age' => 43,
+            'is_senior' => 0,
+        ]);
+
+        // 2. Senior citizen aged 64
+        Beneficiary::create([
+            'civil_registry_id' => 'CRN-AGE-64',
+            'household_no' => 'HH-AGE-2',
+            'first_name' => 'Lolo',
+            'last_name' => 'Senior',
+            'barangay' => 'Poblacion',
+            'date_of_birth' => now()->subYears(64)->toDateString(),
+            'age' => 64,
+            'is_senior' => 1,
+        ]);
+
+        $response = $this->actingAs($this->user)->get('/masterlist');
+
+        $response->assertStatus(200);
+        $response->assertSee('43 yrs');
+        $response->assertSee('64 yrs');
+        $response->assertSee('Senior');
+    }
+
+    public function test_citizen_profile_displays_age_senior_and_pwd_status(): void
+    {
+        $beneficiary = Beneficiary::create([
+            'civil_registry_id' => 'CRN-PROFILE-SENIOR-PWD',
+            'household_no' => 'HH-PROF-1',
+            'first_name' => 'Teresa',
+            'last_name' => 'Magbanua',
+            'barangay' => 'Poblacion',
+            'date_of_birth' => now()->subYears(65)->toDateString(),
+            'age' => 65,
+            'is_senior' => 1,
+            'is_pwd' => 1,
+        ]);
+
+        $response = $this->actingAs($this->user)->get('/masterlist/CRN-PROFILE-SENIOR-PWD');
+
+        $response->assertStatus(200);
+        $response->assertSee('65 years old');
+        $response->assertSee('Senior Citizen');
+        $response->assertSee('PWD');
+    }
 }

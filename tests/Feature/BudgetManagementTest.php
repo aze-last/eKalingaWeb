@@ -2,12 +2,14 @@
 
 namespace Tests\Feature;
 
+use App\Enums\BenefitType;
 use App\Enums\DistributionStatus;
 use App\Enums\FundingType;
 use App\Enums\LedgerEntryType;
 use App\Enums\ProgramStatus;
 use App\Livewire\Budget\Workspace;
 use App\Models\AyudaProgram;
+use App\Models\AyudaProjectClaim;
 use App\Models\Beneficiary;
 use App\Models\FundingSource;
 use App\Models\User;
@@ -768,5 +770,353 @@ class BudgetManagementTest extends TestCase
 
         $selected = $test->get('selectedBeneficiaries') ?? [];
         $this->assertCount(2, $selected);
+    }
+
+    public function test_autofill_respects_age_and_senior_filters(): void
+    {
+        $funding = FundingSource::create([
+            'funding_type' => FundingType::Government,
+            'title' => 'Demographic Grant',
+            'source_code' => 'DEMO-GRANT-01',
+            'allocated_amount' => 100000.00,
+            'spent_amount' => 0.00,
+            'remaining_balance' => 100000.00,
+        ]);
+
+        // Create 4 distinct beneficiaries in Poblacion
+        $bYouth = Beneficiary::create([
+            'first_name' => 'Youth',
+            'last_name' => 'Citizen',
+            'full_name' => 'Citizen, Youth',
+            'civil_registry_id' => 'CRN-DEMO-YOUTH',
+            'household_no' => 'HH-YOUTH',
+            'address' => 'Purok 1, Poblacion, Sulop',
+            'barangay' => 'Poblacion',
+            'date_of_birth' => now()->subYears(20)->toDateString(),
+            'age' => 20,
+            'is_senior' => 0,
+            'is_pwd' => 0,
+            'IsDeleted' => 0,
+        ]);
+
+        $bAdult = Beneficiary::create([
+            'first_name' => 'Adult',
+            'last_name' => 'Citizen',
+            'full_name' => 'Citizen, Adult',
+            'civil_registry_id' => 'CRN-DEMO-ADULT',
+            'household_no' => 'HH-ADULT',
+            'address' => 'Purok 2, Poblacion, Sulop',
+            'barangay' => 'Poblacion',
+            'date_of_birth' => now()->subYears(45)->toDateString(),
+            'age' => 45,
+            'is_senior' => 0,
+            'is_pwd' => 0,
+            'IsDeleted' => 0,
+        ]);
+
+        $bSenior = Beneficiary::create([
+            'first_name' => 'Senior',
+            'last_name' => 'Citizen',
+            'full_name' => 'Citizen, Senior',
+            'civil_registry_id' => 'CRN-DEMO-SENIOR',
+            'household_no' => 'HH-SENIOR',
+            'address' => 'Purok 3, Poblacion, Sulop',
+            'barangay' => 'Poblacion',
+            'date_of_birth' => now()->subYears(68)->toDateString(),
+            'age' => 68,
+            'is_senior' => 1,
+            'is_pwd' => 0,
+            'IsDeleted' => 0,
+        ]);
+
+        $bPwd = Beneficiary::create([
+            'first_name' => 'Pwd',
+            'last_name' => 'Citizen',
+            'full_name' => 'Citizen, Pwd',
+            'civil_registry_id' => 'CRN-DEMO-PWD',
+            'household_no' => 'HH-PWD',
+            'address' => 'Purok 4, Poblacion, Sulop',
+            'barangay' => 'Poblacion',
+            'date_of_birth' => now()->subYears(30)->toDateString(),
+            'age' => 30,
+            'is_senior' => 0,
+            'is_pwd' => 1,
+            'IsDeleted' => 0,
+        ]);
+
+        // 1. Test Senior-only filter
+        $testSenior = Livewire::actingAs($this->admin)
+            ->test(Workspace::class)
+            ->call('openProjectModal')
+            ->set('newProjectFundingSourceId', $funding->id)
+            ->set('newProjectBenefitType', 'Cash')
+            ->set('newProjectBudgetCap', '50000.00')
+            ->set('newProjectUnitAmount', '1000.00')
+            ->set('newProjectTargetCount', 10)
+            ->call('toggleTargetBarangay', 'Poblacion')
+            ->set('candidateSeniorOnly', true)
+            ->call('autoFillCandidatePool');
+
+        $seniorSelected = $testSenior->get('selectedBeneficiaries') ?? [];
+        $this->assertCount(1, $seniorSelected);
+        $this->assertArrayHasKey('CRN-DEMO-SENIOR', $seniorSelected);
+
+        // 2. Test PWD-only filter
+        $testPwd = Livewire::actingAs($this->admin)
+            ->test(Workspace::class)
+            ->call('openProjectModal')
+            ->set('newProjectFundingSourceId', $funding->id)
+            ->set('newProjectBenefitType', 'Cash')
+            ->set('newProjectBudgetCap', '50000.00')
+            ->set('newProjectUnitAmount', '1000.00')
+            ->set('newProjectTargetCount', 10)
+            ->call('toggleTargetBarangay', 'Poblacion')
+            ->set('candidatePwdOnly', true)
+            ->call('autoFillCandidatePool');
+
+        $pwdSelected = $testPwd->get('selectedBeneficiaries') ?? [];
+        $this->assertCount(1, $pwdSelected);
+        $this->assertArrayHasKey('CRN-DEMO-PWD', $pwdSelected);
+
+        // 3. Test Age Range filter (40-50)
+        $testAgeRange = Livewire::actingAs($this->admin)
+            ->test(Workspace::class)
+            ->call('openProjectModal')
+            ->set('newProjectFundingSourceId', $funding->id)
+            ->set('newProjectBenefitType', 'Cash')
+            ->set('newProjectBudgetCap', '50000.00')
+            ->set('newProjectUnitAmount', '1000.00')
+            ->set('newProjectTargetCount', 10)
+            ->call('toggleTargetBarangay', 'Poblacion')
+            ->set('candidateMinAge', 40)
+            ->set('candidateMaxAge', 50)
+            ->call('autoFillCandidatePool');
+
+        $ageSelected = $testAgeRange->get('selectedBeneficiaries') ?? [];
+        $this->assertCount(1, $ageSelected);
+        $this->assertArrayHasKey('CRN-DEMO-ADULT', $ageSelected);
+    }
+
+    public function test_autofill_prioritizes_low_claim_households_over_high_claim_households(): void
+    {
+        $funding = FundingSource::create([
+            'funding_type' => FundingType::Government,
+            'title' => 'Priority Aid Grant',
+            'source_code' => 'PRIO-GRANT-01',
+            'allocated_amount' => 100000.00,
+            'spent_amount' => 0.00,
+            'remaining_balance' => 100000.00,
+        ]);
+
+        $dummyProgram = AyudaProgram::create([
+            'funding_source_id' => $funding->id,
+            'program_code' => 'AMS-PRIO-001',
+            'title' => 'Prior Program',
+            'benefit_type' => BenefitType::Cash,
+            'budget_cap' => 20000,
+            'unit_amount' => 1000,
+            'target_beneficiaries' => 20,
+        ]);
+
+        // Create 4 candidates across 4 households in Poblacion
+        $cand0 = Beneficiary::create([
+            'first_name' => 'Zero',
+            'last_name' => 'Claims',
+            'full_name' => 'Claims, Zero',
+            'civil_registry_id' => 'CRN-PRIO-0',
+            'household_no' => 'HH-PRIO-0',
+            'address' => 'Purok 1, Poblacion, Sulop',
+            'barangay' => 'Poblacion',
+            'IsDeleted' => 0,
+        ]);
+
+        $cand1 = Beneficiary::create([
+            'first_name' => 'One',
+            'last_name' => 'Claim',
+            'full_name' => 'Claim, One',
+            'civil_registry_id' => 'CRN-PRIO-1',
+            'household_no' => 'HH-PRIO-1',
+            'address' => 'Purok 2, Poblacion, Sulop',
+            'barangay' => 'Poblacion',
+            'IsDeleted' => 0,
+        ]);
+        AyudaProjectClaim::create([
+            'ayuda_program_id' => $dummyProgram->id,
+            'beneficiary_id' => $cand1->id,
+            'civil_registry_id' => 'CRN-PRIO-1',
+            'household_no' => 'HH-PRIO-1',
+            'claim_code' => 'CLM-P1-01',
+            'unit_amount' => 1000,
+            'claimed_at' => now(),
+        ]);
+
+        $cand3 = Beneficiary::create([
+            'first_name' => 'Three',
+            'last_name' => 'Claims',
+            'full_name' => 'Claims, Three',
+            'civil_registry_id' => 'CRN-PRIO-3',
+            'household_no' => 'HH-PRIO-3',
+            'address' => 'Purok 3, Poblacion, Sulop',
+            'barangay' => 'Poblacion',
+            'IsDeleted' => 0,
+        ]);
+        for ($i = 1; $i <= 3; $i++) {
+            AyudaProjectClaim::create([
+                'ayuda_program_id' => $dummyProgram->id,
+                'beneficiary_id' => $cand3->id,
+                'civil_registry_id' => 'CRN-PRIO-3',
+                'household_no' => 'HH-PRIO-3',
+                'claim_code' => "CLM-P3-0{$i}",
+                'unit_amount' => 1000,
+                'claimed_at' => now(),
+            ]);
+        }
+
+        $cand5 = Beneficiary::create([
+            'first_name' => 'Five',
+            'last_name' => 'Claims',
+            'full_name' => 'Claims, Five',
+            'civil_registry_id' => 'CRN-PRIO-5',
+            'household_no' => 'HH-PRIO-5',
+            'address' => 'Purok 4, Poblacion, Sulop',
+            'barangay' => 'Poblacion',
+            'IsDeleted' => 0,
+        ]);
+        for ($i = 1; $i <= 5; $i++) {
+            AyudaProjectClaim::create([
+                'ayuda_program_id' => $dummyProgram->id,
+                'beneficiary_id' => $cand5->id,
+                'civil_registry_id' => 'CRN-PRIO-5',
+                'household_no' => 'HH-PRIO-5',
+                'claim_code' => "CLM-P5-0{$i}",
+                'unit_amount' => 1000,
+                'claimed_at' => now(),
+            ]);
+        }
+
+        // Test with target count = 2: Only 0 claims and 1 claim candidates should be selected
+        $testPrio = Livewire::actingAs($this->admin)
+            ->test(Workspace::class)
+            ->call('openProjectModal')
+            ->set('newProjectFundingSourceId', $funding->id)
+            ->set('newProjectBenefitType', 'Cash')
+            ->set('newProjectBudgetCap', '50000.00')
+            ->set('newProjectUnitAmount', '1000.00')
+            ->set('newProjectTargetCount', 2)
+            ->call('toggleTargetBarangay', 'Poblacion')
+            ->call('autoFillCandidatePool');
+
+        $selected = $testPrio->get('selectedBeneficiaries') ?? [];
+        $this->assertCount(2, $selected);
+        $this->assertArrayHasKey('CRN-PRIO-0', $selected);
+        $this->assertArrayHasKey('CRN-PRIO-1', $selected);
+        $this->assertArrayNotHasKey('CRN-PRIO-3', $selected);
+        $this->assertArrayNotHasKey('CRN-PRIO-5', $selected);
+
+        // Test with target count = 4: All candidates are selectable (non-blocking fallback to higher tiers)
+        $testAll = Livewire::actingAs($this->admin)
+            ->test(Workspace::class)
+            ->call('openProjectModal')
+            ->set('newProjectFundingSourceId', $funding->id)
+            ->set('newProjectBenefitType', 'Cash')
+            ->set('newProjectBudgetCap', '50000.00')
+            ->set('newProjectUnitAmount', '1000.00')
+            ->set('newProjectTargetCount', 4)
+            ->call('toggleTargetBarangay', 'Poblacion')
+            ->call('autoFillCandidatePool');
+
+        $allSelected = $testAll->get('selectedBeneficiaries') ?? [];
+        $this->assertCount(4, $allSelected);
+        $this->assertArrayHasKey('CRN-PRIO-3', $allSelected);
+        $this->assertArrayHasKey('CRN-PRIO-5', $allSelected);
+    }
+
+    public function test_household_review_displays_soft_claim_advisory_for_3_to_5_claims(): void
+    {
+        $funding = FundingSource::create([
+            'funding_type' => FundingType::Government,
+            'title' => 'Advisory Test Funding',
+            'source_code' => 'ADV-TEST-01',
+            'allocated_amount' => 100000.00,
+            'spent_amount' => 0.00,
+            'remaining_balance' => 100000.00,
+        ]);
+
+        $dummyProgram = AyudaProgram::create([
+            'funding_source_id' => $funding->id,
+            'program_code' => 'AMS-ADV-001',
+            'title' => 'Advisory Program',
+            'benefit_type' => BenefitType::Cash,
+            'budget_cap' => 20000,
+            'unit_amount' => 1000,
+            'target_beneficiaries' => 20,
+        ]);
+
+        // Candidate with 3 claims -> moderate alert
+        $candMod = Beneficiary::create([
+            'first_name' => 'Moderate',
+            'last_name' => 'Citizen',
+            'full_name' => 'Citizen, Moderate',
+            'civil_registry_id' => 'CRN-ADV-MOD',
+            'household_no' => 'HH-ADV-MOD',
+            'address' => 'Purok 1, Poblacion, Sulop',
+            'barangay' => 'Poblacion',
+            'IsDeleted' => 0,
+        ]);
+        for ($i = 1; $i <= 3; $i++) {
+            AyudaProjectClaim::create([
+                'ayuda_program_id' => $dummyProgram->id,
+                'beneficiary_id' => $candMod->id,
+                'civil_registry_id' => 'CRN-ADV-MOD',
+                'household_no' => 'HH-ADV-MOD',
+                'claim_code' => "CLM-MOD-0{$i}",
+                'unit_amount' => 1000,
+                'claimed_at' => now(),
+            ]);
+        }
+
+        // Candidate with 5 claims -> high alert
+        $candHigh = Beneficiary::create([
+            'first_name' => 'High',
+            'last_name' => 'Citizen',
+            'full_name' => 'Citizen, High',
+            'civil_registry_id' => 'CRN-ADV-HIGH',
+            'household_no' => 'HH-ADV-HIGH',
+            'address' => 'Purok 2, Poblacion, Sulop',
+            'barangay' => 'Poblacion',
+            'IsDeleted' => 0,
+        ]);
+        for ($i = 1; $i <= 5; $i++) {
+            AyudaProjectClaim::create([
+                'ayuda_program_id' => $dummyProgram->id,
+                'beneficiary_id' => $candHigh->id,
+                'civil_registry_id' => 'CRN-ADV-HIGH',
+                'household_no' => 'HH-ADV-HIGH',
+                'claim_code' => "CLM-HIGH-0{$i}",
+                'unit_amount' => 1000,
+                'claimed_at' => now(),
+            ]);
+        }
+
+        $test = Livewire::actingAs($this->admin)
+            ->test(Workspace::class)
+            ->call('openProjectModal')
+            ->call('openHouseholdReview', $candMod->id);
+
+        $this->assertEquals('moderate', $test->get('reviewingCandidateClaimsAlert'));
+        $this->assertEquals(3, $test->get('reviewingCandidate')['claims_count']);
+
+        // Verify strictly non-blocking: user can confirm & add
+        $test->call('confirmAddCandidate');
+        $this->assertArrayHasKey('CRN-ADV-MOD', $test->get('selectedBeneficiaries'));
+
+        // Test candidate with 5 claims
+        $test->call('openHouseholdReview', $candHigh->id);
+        $this->assertEquals('high', $test->get('reviewingCandidateClaimsAlert'));
+        $this->assertEquals(5, $test->get('reviewingCandidate')['claims_count']);
+
+        // Verify strictly non-blocking: user can confirm & add
+        $test->call('confirmAddCandidate');
+        $this->assertArrayHasKey('CRN-ADV-HIGH', $test->get('selectedBeneficiaries'));
     }
 }

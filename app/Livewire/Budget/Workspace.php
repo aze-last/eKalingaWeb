@@ -20,6 +20,7 @@ use App\Services\GgmsProjectSyncService;
 use App\Services\PerformanceCacheService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
@@ -146,10 +147,23 @@ class Workspace extends Component
 
     public array $selectedBeneficiaries = []; // Keyed by identifier
 
+    // Step 4 Demographic & Eligibility Filters
+    public ?int $candidateMinAge = null;
+
+    public ?int $candidateMaxAge = null;
+
+    public bool $candidateSeniorOnly = false;
+
+    public bool $candidatePwdOnly = false;
+
+    public bool $showCandidateFilterDrawer = false;
+
     // Step 4b: Household Review Modal State
     public bool $showHouseholdModal = false;
 
     public ?array $reviewingCandidate = null;
+
+    public ?string $reviewingCandidateClaimsAlert = null; // null, 'moderate', 'high'
 
     public array $reviewingHouseholdMembers = [];
 
@@ -656,6 +670,14 @@ class Workspace extends Component
         }
     }
 
+    public function resetCandidateFilters(): void
+    {
+        $this->candidateMinAge = null;
+        $this->candidateMaxAge = null;
+        $this->candidateSeniorOnly = false;
+        $this->candidatePwdOnly = false;
+    }
+
     public function openProjectModal(): void
     {
         $firstSource = FundingSource::where('remaining_balance', '>', 0)->first();
@@ -674,6 +696,9 @@ class Workspace extends Component
         $this->selectedBeneficiaries = [];
         $this->candidateSearch = '';
         $this->candidateBarangay = '';
+        $this->resetCandidateFilters();
+        $this->showCandidateFilterDrawer = false;
+        $this->reviewingCandidateClaimsAlert = null;
         $this->resetErrorBag();
         $this->showProjectModal = true;
     }
@@ -700,7 +725,10 @@ class Workspace extends Component
         $this->newProjectDescription = '';
         $this->candidateSearch = '';
         $this->candidateBarangay = '';
+        $this->resetCandidateFilters();
+        $this->showCandidateFilterDrawer = false;
         $this->reviewingCandidate = null;
+        $this->reviewingCandidateClaimsAlert = null;
         $this->resetErrorBag();
     }
 
@@ -897,6 +925,23 @@ class Workspace extends Component
         $this->reviewingHouseholdHead = $headName;
         $this->reviewingHouseholdCode = $householdNumber ?: ($candidate->household_no ?? 'N/A');
 
+        $candCrn = (string) $this->reviewingCandidate['civil_registry_id'];
+        $candId = (int) $candidate->id;
+        $candidateClaims = AyudaProjectClaim::where(function ($q) use ($candCrn, $candId) {
+            $q->where('civil_registry_id', $candCrn)
+                ->orWhere('beneficiary_id', $candId);
+        })->count();
+
+        $this->reviewingCandidate['claims_count'] = $candidateClaims;
+
+        if ($candidateClaims >= 5) {
+            $this->reviewingCandidateClaimsAlert = 'high';
+        } elseif ($candidateClaims >= 3) {
+            $this->reviewingCandidateClaimsAlert = 'moderate';
+        } else {
+            $this->reviewingCandidateClaimsAlert = null;
+        }
+
         $this->showHouseholdModal = true;
     }
 
@@ -904,6 +949,7 @@ class Workspace extends Component
     {
         $this->showHouseholdModal = false;
         $this->reviewingCandidate = null;
+        $this->reviewingCandidateClaimsAlert = null;
     }
 
     public function confirmAddCandidate(): void
@@ -942,7 +988,11 @@ class Workspace extends Component
         $roster = $this->resolveIntelligentBeneficiaryRoster(
             selectedBarangays: $barangays,
             targetTotal: $targetCount,
-            currentSelected: $this->selectedBeneficiaries
+            currentSelected: $this->selectedBeneficiaries,
+            minAge: $this->candidateMinAge,
+            maxAge: $this->candidateMaxAge,
+            seniorOnly: $this->candidateSeniorOnly,
+            pwdOnly: $this->candidatePwdOnly
         );
 
         $added = 0;
@@ -951,6 +1001,11 @@ class Workspace extends Component
             $added++;
         }
 
+        $highClaimsCount = $roster['moderate_high_claims_count'] ?? 0;
+        $advisorySuffix = $highClaimsCount > 0
+            ? " Note: {$highClaimsCount} citizen(s) have received 3–5+ past disbursements."
+            : '';
+
         if ($added > 0) {
             $this->dispatch('play-audio-success');
             $brgyCount = count($roster['effective_barangays']);
@@ -958,13 +1013,13 @@ class Workspace extends Component
                 $this->dispatch(
                     'toast',
                     type: 'warning',
-                    message: "Auto-filled {$added} citizen(s) across {$brgyCount} barangay(s). Only {$added} eligible unique household(s) were available (target: {$targetCount})."
+                    message: "Auto-filled {$added} citizen(s) across {$brgyCount} barangay(s). Only {$added} eligible unique household(s) were available (target: {$targetCount}).{$advisorySuffix}"
                 );
             } else {
                 $this->dispatch(
                     'toast',
                     type: 'info',
-                    message: "Auto-filled {$added} citizen(s) across {$brgyCount} barangay(s) with 1 beneficiary per unique household."
+                    message: "Auto-filled {$added} citizen(s) across {$brgyCount} barangay(s) with 1 beneficiary per unique household.{$advisorySuffix}"
                 );
             }
         } else {
@@ -974,6 +1029,77 @@ class Workspace extends Component
                 type: 'warning',
                 message: 'No additional eligible unique households found in the selected barangay(s).'
             );
+        }
+    }
+
+    /**
+     * Apply demographic filters to an Eloquent Beneficiary query.
+     */
+    protected function applyDemographicFiltersToQuery(
+        $query,
+        ?int $minAge = null,
+        ?int $maxAge = null,
+        bool $seniorOnly = false,
+        bool $pwdOnly = false
+    ): void {
+        $conn = (new Beneficiary)->getConnectionName() ?: config('database.default');
+        $tableName = (new Beneficiary)->getTable() ?: 'val_beneficiaries';
+
+        $hasIsSenior = Schema::connection($conn)->hasColumn($tableName, 'is_senior');
+        $hasIsPwd = Schema::connection($conn)->hasColumn($tableName, 'is_pwd');
+        $hasAge = Schema::connection($conn)->hasColumn($tableName, 'age');
+        $hasDob = Schema::connection($conn)->hasColumn($tableName, 'date_of_birth');
+        $hasBirthDate = Schema::connection($conn)->hasColumn($tableName, 'birth_date');
+
+        if ($seniorOnly) {
+            $query->where(function ($q) use ($hasIsSenior, $hasAge, $hasDob, $hasBirthDate) {
+                if ($hasIsSenior) {
+                    $q->orWhere('is_senior', 1);
+                }
+                if ($hasAge) {
+                    $q->orWhere('age', '>=', 60);
+                }
+                if ($hasDob) {
+                    $q->orWhere('date_of_birth', '<=', now()->subYears(60)->toDateString());
+                }
+                if ($hasBirthDate) {
+                    $q->orWhere('birth_date', '<=', now()->subYears(60)->toDateString());
+                }
+            });
+        }
+
+        if ($pwdOnly && $hasIsPwd) {
+            $query->where('is_pwd', 1);
+        }
+
+        if ($minAge !== null && $minAge > 0 && ! $seniorOnly) {
+            $cutoff = now()->subYears($minAge)->toDateString();
+            $query->where(function ($q) use ($minAge, $cutoff, $hasAge, $hasDob, $hasBirthDate) {
+                if ($hasAge) {
+                    $q->orWhere('age', '>=', $minAge);
+                }
+                if ($hasDob) {
+                    $q->orWhere('date_of_birth', '<=', $cutoff);
+                }
+                if ($hasBirthDate) {
+                    $q->orWhere('birth_date', '<=', $cutoff);
+                }
+            });
+        }
+
+        if ($maxAge !== null && $maxAge > 0) {
+            $cutoff = now()->subYears($maxAge + 1)->addDay()->toDateString();
+            $query->where(function ($q) use ($maxAge, $cutoff, $hasAge, $hasDob, $hasBirthDate) {
+                if ($hasAge) {
+                    $q->orWhere('age', '<=', $maxAge);
+                }
+                if ($hasDob) {
+                    $q->orWhere('date_of_birth', '>=', $cutoff);
+                }
+                if ($hasBirthDate) {
+                    $q->orWhere('birth_date', '>=', $cutoff);
+                }
+            });
         }
     }
 
@@ -988,13 +1114,18 @@ class Workspace extends Component
      *     needed: int,
      *     target_total: int,
      *     effective_barangays: array<int, string>,
-     *     quotas: array<string, int>
+     *     quotas: array<string, int>,
+     *     moderate_high_claims_count: int
      * }
      */
     protected function resolveIntelligentBeneficiaryRoster(
         array $selectedBarangays,
         int $targetTotal,
-        array $currentSelected = []
+        array $currentSelected = [],
+        ?int $minAge = null,
+        ?int $maxAge = null,
+        bool $seniorOnly = false,
+        bool $pwdOnly = false
     ): array {
         $alreadySelectedCount = count($currentSelected);
         $neededCount = max(0, $targetTotal - $alreadySelectedCount);
@@ -1007,6 +1138,7 @@ class Workspace extends Component
                 'target_total' => $targetTotal,
                 'effective_barangays' => $selectedBarangays,
                 'quotas' => [],
+                'moderate_high_claims_count' => 0,
             ];
         }
 
@@ -1054,6 +1186,7 @@ class Workspace extends Component
                     }
                 });
             }
+            $this->applyDemographicFiltersToQuery($query, $minAge, $maxAge, $seniorOnly, $pwdOnly);
             $rawPool = $query->inRandomOrder()->take($fetchLimit)->get();
 
             foreach ($rawPool as $candidate) {
@@ -1073,21 +1206,36 @@ class Workspace extends Component
         } else {
             $fetchPerBrgy = max(60, (int) ceil(($neededCount / max(1, count($effectiveBarangays))) * 3));
             foreach ($effectiveBarangays as $brgy) {
-                $rawPool = Beneficiary::where('address', 'like', "%{$brgy}%")
-                    ->inRandomOrder()
-                    ->take($fetchPerBrgy)
-                    ->get();
+                $query = Beneficiary::where('address', 'like', "%{$brgy}%");
+                $this->applyDemographicFiltersToQuery($query, $minAge, $maxAge, $seniorOnly, $pwdOnly);
+                $rawPool = $query->inRandomOrder()->take($fetchPerBrgy)->get();
                 $barangayPools[$brgy] = $rawPool->all();
             }
         }
 
         // 2. Group candidates by household within each barangay and pick 1 random member
         $availableByBarangay = [];
+        $allChosenRepresentatives = [];
+
         foreach ($effectiveBarangays as $brgy) {
             $candidates = $barangayPools[$brgy] ?? [];
             $byHousehold = [];
 
             foreach ($candidates as $c) {
+                // In-memory demographic filter check
+                if ($seniorOnly && ! $c->is_senior) {
+                    continue;
+                }
+                if ($pwdOnly && ! $c->is_pwd) {
+                    continue;
+                }
+                if ($minAge !== null && ($c->age === null || $c->age < $minAge)) {
+                    continue;
+                }
+                if ($maxAge !== null && ($c->age === null || $c->age > $maxAge)) {
+                    continue;
+                }
+
                 $cId = (string) $c->id;
                 $crn = (string) ($c->civil_registry_id ?: $c->civilregistry_id ?: $c->beneficiary_id ?: "CRN-{$c->id}");
 
@@ -1107,14 +1255,62 @@ class Workspace extends Component
             $uniqueHouseholds = [];
             foreach ($byHousehold as $hKey => $members) {
                 $chosen = $members[array_rand($members)];
+                $chosenCrn = (string) ($chosen->civil_registry_id ?: $chosen->civilregistry_id ?: $chosen->beneficiary_id ?: "CRN-{$chosen->id}");
                 $uniqueHouseholds[] = [
                     'candidate' => $chosen,
                     'household_key' => $hKey,
+                    'crn' => $chosenCrn,
                 ];
+                $allChosenRepresentatives[] = $chosen;
             }
 
-            shuffle($uniqueHouseholds);
             $availableByBarangay[$brgy] = $uniqueHouseholds;
+        }
+
+        // Batch query claims for all chosen household members across all barangays to avoid N+1 queries
+        $allCrns = array_map(fn ($c) => (string) ($c->civil_registry_id ?: $c->civilregistry_id ?: $c->beneficiary_id ?: "CRN-{$c->id}"), $allChosenRepresentatives);
+        $claimCounts = [];
+        if (! empty($allCrns)) {
+            try {
+                $claimCounts = AyudaProjectClaim::whereIn('civil_registry_id', $allCrns)
+                    ->selectRaw('civil_registry_id, count(*) as cnt')
+                    ->groupBy('civil_registry_id')
+                    ->pluck('cnt', 'civil_registry_id')
+                    ->all();
+            } catch (\Throwable) {
+                $claimCounts = [];
+            }
+        }
+
+        // Prioritize candidates into 4 claim-history tiers within each barangay
+        foreach ($effectiveBarangays as $brgy) {
+            $households = $availableByBarangay[$brgy] ?? [];
+            $tier1 = []; // 0 claims
+            $tier2 = []; // 1–2 claims
+            $tier3 = []; // 3–4 claims
+            $tier4 = []; // 5+ claims
+
+            foreach ($households as $item) {
+                $cnt = (int) ($claimCounts[$item['crn']] ?? 0);
+                $item['claims_count'] = $cnt;
+
+                if ($cnt === 0) {
+                    $tier1[] = $item;
+                } elseif ($cnt <= 2) {
+                    $tier2[] = $item;
+                } elseif ($cnt <= 4) {
+                    $tier3[] = $item;
+                } else {
+                    $tier4[] = $item;
+                }
+            }
+
+            shuffle($tier1);
+            shuffle($tier2);
+            shuffle($tier3);
+            shuffle($tier4);
+
+            $availableByBarangay[$brgy] = array_merge($tier1, $tier2, $tier3, $tier4);
         }
 
         // 3. Fair water-filling quota allocation across selected barangays
@@ -1185,7 +1381,18 @@ class Workspace extends Component
                     'address' => $c->address,
                     'sex' => $c->gender ?? $c->sex ?? 'N/A',
                     'birth_date' => $c->birthDate ?? $c->date_of_birth ?? 'N/A',
+                    'age' => $c->age,
+                    'is_senior' => $c->is_senior,
+                    'is_pwd' => $c->is_pwd,
+                    'claims_count' => $item['claims_count'] ?? 0,
                 ];
+            }
+        }
+
+        $moderateHighClaimsCount = 0;
+        foreach ($addedCandidates as $item) {
+            if (($item['claims_count'] ?? 0) >= 3) {
+                $moderateHighClaimsCount++;
             }
         }
 
@@ -1196,6 +1403,7 @@ class Workspace extends Component
             'target_total' => $targetTotal,
             'effective_barangays' => $effectiveBarangays,
             'quotas' => $allocatedQuotas,
+            'moderate_high_claims_count' => $moderateHighClaimsCount,
         ];
     }
 
@@ -1311,7 +1519,11 @@ class Workspace extends Component
                     $roster = $this->resolveIntelligentBeneficiaryRoster(
                         selectedBarangays: $targetBarangays,
                         targetTotal: $targetLimit,
-                        currentSelected: []
+                        currentSelected: [],
+                        minAge: $this->candidateMinAge,
+                        maxAge: $this->candidateMaxAge,
+                        seniorOnly: $this->candidateSeniorOnly,
+                        pwdOnly: $this->candidatePwdOnly
                     );
 
                     foreach ($roster['added'] as $b) {
@@ -1565,8 +1777,36 @@ class Workspace extends Component
                     });
                 }
 
+                $this->applyDemographicFiltersToQuery(
+                    $candidateQ,
+                    $this->candidateMinAge,
+                    $this->candidateMaxAge,
+                    $this->candidateSeniorOnly,
+                    $this->candidatePwdOnly
+                );
+
                 $totalCandidatesCount = $candidateQ->count();
                 $candidates = $candidateQ->take(200)->get();
+
+                // Batch-load claims counts for candidate cards to prevent N+1 queries
+                $candCrns = $candidates->map(fn ($c) => (string) ($c->civil_registry_id ?: $c->civilregistry_id ?: $c->beneficiary_id ?: "CRN-{$c->id}"))->all();
+                $claimsMap = [];
+                if (! empty($candCrns)) {
+                    try {
+                        $claimsMap = AyudaProjectClaim::whereIn('civil_registry_id', $candCrns)
+                            ->selectRaw('civil_registry_id, count(*) as cnt')
+                            ->groupBy('civil_registry_id')
+                            ->pluck('cnt', 'civil_registry_id')
+                            ->all();
+                    } catch (\Throwable) {
+                        $claimsMap = [];
+                    }
+                }
+
+                foreach ($candidates as $c) {
+                    $crn = (string) ($c->civil_registry_id ?: $c->civilregistry_id ?: $c->beneficiary_id ?: "CRN-{$c->id}");
+                    $c->claims_count = (int) ($claimsMap[$crn] ?? 0);
+                }
             } catch (\Throwable) {
                 $candidates = collect();
                 $totalCandidatesCount = 0;

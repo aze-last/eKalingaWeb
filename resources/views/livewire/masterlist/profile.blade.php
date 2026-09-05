@@ -84,6 +84,30 @@
                     </span>
                 </div>
                 <div>
+                    <span class="text-slate-400 text-[10px] font-bold uppercase block">Age</span>
+                    <span class="font-bold text-neutral-strong">
+                        @if($beneficiary?->age !== null)
+                            {{ $beneficiary->age }} years old
+                        @else
+                            N/A
+                        @endif
+                    </span>
+                </div>
+                <div>
+                    <span class="text-slate-400 text-[10px] font-bold uppercase block">Special Classification</span>
+                    <div class="flex flex-wrap items-center gap-1 mt-0.5">
+                        @if($beneficiary?->is_senior)
+                            <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">Senior Citizen</span>
+                        @endif
+                        @if($beneficiary?->is_pwd)
+                            <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-800 border border-blue-200">PWD</span>
+                        @endif
+                        @if(!$beneficiary?->is_senior && !$beneficiary?->is_pwd)
+                            <span class="text-slate-500 font-medium">Regular Resident</span>
+                        @endif
+                    </div>
+                </div>
+                <div>
                     <span class="text-slate-400 text-[10px] font-bold uppercase block">Contact No.</span>
                     <span class="font-mono text-slate-700">{{ $beneficiary?->contact_no ?? $beneficiary?->contact_number ?? $beneficiary?->phone_no ?? 'None' }}</span>
                 </div>

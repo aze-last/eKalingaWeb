@@ -1891,6 +1891,75 @@
                             
                             <!-- Left Pane: Searchable / Paginated Candidates -->
                             <div class="lg:col-span-7 border border-slate-200 rounded-xl p-3 flex flex-col min-h-0 bg-slate-50/50 relative">
+                                
+                                <!-- Collapsible Demographic & Eligibility Filters -->
+                                <div class="mb-2 shrink-0 bg-white border border-slate-200 rounded-lg p-2 text-xs">
+                                    <div class="flex items-center justify-between cursor-pointer select-none" wire:click="$toggle('showCandidateFilterDrawer')">
+                                        <div class="flex items-center gap-1.5 font-bold text-neutral-strong">
+                                            <svg class="w-3.5 h-3.5 text-brand" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
+                                            <span>Demographic & Eligibility Filters</span>
+                                            @if($candidateMinAge || $candidateMaxAge || $candidateSeniorOnly || $candidatePwdOnly)
+                                                <span class="w-2 h-2 rounded-full bg-brand inline-block" title="Active filters applied"></span>
+                                            @endif
+                                        </div>
+                                        <div class="flex items-center gap-2">
+                                            @if($candidateMinAge || $candidateMaxAge || $candidateSeniorOnly || $candidatePwdOnly)
+                                                <button 
+                                                    type="button" 
+                                                    wire:click.stop="resetCandidateFilters"
+                                                    class="text-[10px] font-bold text-rose-600 hover:underline cursor-pointer"
+                                                >
+                                                    Reset Filters
+                                                </button>
+                                            @endif
+                                            <svg class="w-3.5 h-3.5 text-slate-400 transform transition-transform {{ $showCandidateFilterDrawer ? 'rotate-180' : '' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                                        </div>
+                                    </div>
+
+                                    <div class="{{ $showCandidateFilterDrawer ? 'block' : 'hidden' }} mt-2 pt-2 border-t border-slate-100 space-y-2">
+                                        <div class="flex flex-wrap items-center gap-2">
+                                            <div class="flex items-center gap-1">
+                                                <span class="text-[11px] text-slate-500 font-medium">Min Age:</span>
+                                                <input 
+                                                    type="number" 
+                                                    min="0" 
+                                                    max="120" 
+                                                    placeholder="18"
+                                                    wire:model.live.debounce.300ms="candidateMinAge" 
+                                                    class="w-14 border border-slate-200 rounded px-1.5 py-0.5 text-xs bg-slate-50 focus:bg-white focus:ring-1 focus:ring-brand text-center font-mono"
+                                                >
+                                            </div>
+                                            <div class="flex items-center gap-1">
+                                                <span class="text-[11px] text-slate-500 font-medium">Max Age:</span>
+                                                <input 
+                                                    type="number" 
+                                                    min="0" 
+                                                    max="120" 
+                                                    placeholder="59"
+                                                    wire:model.live.debounce.300ms="candidateMaxAge" 
+                                                    class="w-14 border border-slate-200 rounded px-1.5 py-0.5 text-xs bg-slate-50 focus:bg-white focus:ring-1 focus:ring-brand text-center font-mono"
+                                                >
+                                            </div>
+
+                                            <button 
+                                                type="button" 
+                                                wire:click="$toggle('candidateSeniorOnly')"
+                                                class="px-2 py-0.5 rounded text-[11px] font-bold transition-colors cursor-pointer {{ $candidateSeniorOnly ? 'bg-amber-600 text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-700' }}"
+                                            >
+                                                {{ $candidateSeniorOnly ? '✓ Senior Citizens Only (60+)' : 'Senior Citizens Only (60+)' }}
+                                            </button>
+
+                                            <button 
+                                                type="button" 
+                                                wire:click="$toggle('candidatePwdOnly')"
+                                                class="px-2 py-0.5 rounded text-[11px] font-bold transition-colors cursor-pointer {{ $candidatePwdOnly ? 'bg-blue-600 text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-700' }}"
+                                            >
+                                                {{ $candidatePwdOnly ? '✓ PWD Only' : 'PWD Only' }}
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
                                 <!-- Filters -->
                                 <div class="flex gap-2 mb-2 shrink-0">
                                     <div class="relative w-full">
@@ -1929,7 +1998,7 @@
                                 <!-- Candidate List (Scrollable) -->
                                 <div class="flex-1 min-h-0 overflow-y-auto divide-y divide-slate-100 bg-white rounded-lg border border-slate-200 relative">
                                     <!-- Candidate search/filter loading overlay -->
-                                    <div wire:loading.flex wire:target="candidateSearch, candidateBarangay" class="absolute inset-0 bg-white/80 backdrop-blur-xs z-10 flex-col items-center justify-center gap-2">
+                                    <div wire:loading.flex wire:target="candidateSearch, candidateBarangay, candidateMinAge, candidateMaxAge, candidateSeniorOnly, candidatePwdOnly, resetCandidateFilters" class="absolute inset-0 bg-white/80 backdrop-blur-xs z-10 flex-col items-center justify-center gap-2">
                                         <svg class="animate-spin h-6 w-6 text-brand" fill="none" viewBox="0 0 24 24">
                                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
@@ -1959,9 +2028,22 @@
                                             title="Click to review {{ $candidate->full_name }}'s household history before enrolling"
                                         >
                                             <div>
-                                                <p class="font-bold text-neutral-strong group-hover:text-brand text-xs">{{ $candidate->full_name }}</p>
-                                                <p class="text-[10px] text-slate-500 font-mono">
-                                                    {{ $candidate->civil_registry_id ?: $candidate->civilregistry_id ?: $candidate->beneficiary_id }} • {{ $candidate->barangay }}
+                                                <p class="font-bold text-neutral-strong group-hover:text-brand text-xs flex items-center gap-1.5">
+                                                    <span>{{ $candidate->full_name }}</span>
+                                                    @if($candidate->age !== null)
+                                                        <span class="text-[10px] px-1 py-0.2 bg-slate-100 text-slate-600 rounded font-normal font-sans">{{ $candidate->age }} yrs{{ $candidate->is_senior ? ' · Sr' : '' }}</span>
+                                                    @endif
+                                                    @if($candidate->is_pwd)
+                                                        <span class="text-[9px] px-1 py-0.2 bg-blue-50 text-blue-700 rounded font-bold font-sans">PWD</span>
+                                                    @endif
+                                                </p>
+                                                <p class="text-[10px] text-slate-500 font-mono flex items-center gap-1.5">
+                                                    <span>{{ $candidate->civil_registry_id ?: $candidate->civilregistry_id ?: $candidate->beneficiary_id }} • {{ $candidate->barangay }}</span>
+                                                    @if(($candidate->claims_count ?? 0) >= 3)
+                                                        <span class="px-1 py-0.2 text-[9px] rounded font-bold {{ ($candidate->claims_count ?? 0) >= 5 ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-800' }}">
+                                                            {{ $candidate->claims_count }} claims
+                                                        </span>
+                                                    @endif
                                                 </p>
                                             </div>
                                             <div class="flex items-center gap-1">
@@ -2243,6 +2325,23 @@
                     @endif
                 </div>
 
+                <!-- Soft Claims History Advisory (Non-blocking) -->
+                @if(($reviewingCandidateClaimsAlert ?? null) === 'high')
+                    <div class="p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-900 font-medium flex items-start gap-2.5">
+                        <span class="text-base leading-none">⚠️</span>
+                        <div>
+                            <span class="font-bold">High Assistance Notice:</span> This citizen has received {{ $reviewingCandidate['claims_count'] ?? '5+' }}+ previous aid packages. Please confirm if they should be included in this project.
+                        </div>
+                    </div>
+                @elseif(($reviewingCandidateClaimsAlert ?? null) === 'moderate')
+                    <div class="p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900 font-medium flex items-start gap-2.5">
+                        <span class="text-base leading-none">⚠️</span>
+                        <div>
+                            <span class="font-bold">Assistance History Notice:</span> This citizen has received {{ $reviewingCandidate['claims_count'] ?? 3 }} previous aid packages. Please confirm if they should be included in this project.
+                        </div>
+                    </div>
+                @endif
+
                 <!-- Modal Actions -->
                 <div class="flex justify-end gap-2 pt-3 border-t border-slate-100">
                     <button 
@@ -2264,7 +2363,7 @@
                         title="Confirm household eligibility and add candidate to project enrollment queue"
                     >
                         <svg wire:loading wire:target="confirmAddCandidate" class="animate-spin h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
-                        <span wire:loading.remove wire:target="confirmAddCandidate">Add to Project</span>
+                        <span wire:loading.remove wire:target="confirmAddCandidate">Confirm & Add</span>
                         <span wire:loading wire:target="confirmAddCandidate">Adding Candidate...</span>
                     </button>
                 </div>

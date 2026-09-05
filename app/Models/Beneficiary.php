@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -149,6 +150,64 @@ class Beneficiary extends Model
         return Attribute::make(
             get: function () {
                 return $this->attributes['date_of_birth'] ?? $this->attributes['birth_date'] ?? null;
+            }
+        );
+    }
+
+    /**
+     * Normalized Age attribute.
+     */
+    public function age(): Attribute
+    {
+        return Attribute::make(
+            get: function () {
+                if (isset($this->attributes['age']) && is_numeric($this->attributes['age']) && (int) $this->attributes['age'] > 0) {
+                    return (int) $this->attributes['age'];
+                }
+
+                $rawBirth = $this->attributes['date_of_birth'] ?? $this->attributes['birth_date'] ?? null;
+                if ($rawBirth) {
+                    try {
+                        $dob = Carbon::parse($rawBirth);
+                        if ($dob->isPast() && $dob->year > 1900) {
+                            return $dob->age;
+                        }
+                    } catch (\Throwable) {
+                    }
+                }
+
+                return null;
+            }
+        );
+    }
+
+    /**
+     * Normalized Senior Citizen attribute.
+     */
+    public function isSenior(): Attribute
+    {
+        return Attribute::make(
+            get: function () {
+                $persisted = ! empty($this->attributes['is_senior']);
+                if ($persisted) {
+                    return true;
+                }
+
+                $age = $this->age;
+
+                return $age !== null && $age >= 60;
+            }
+        );
+    }
+
+    /**
+     * Normalized PWD attribute.
+     */
+    public function isPwd(): Attribute
+    {
+        return Attribute::make(
+            get: function () {
+                return ! empty($this->attributes['is_pwd']);
             }
         );
     }
