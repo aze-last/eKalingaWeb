@@ -138,7 +138,7 @@
                 <!-- Scrollable List -->
                 <div class="flex-1 overflow-y-auto space-y-2.5 pr-1 divide-y divide-slate-100">
                     @forelse($releasedList as $item)
-                        <div class="pt-2.5 first:pt-0">
+                        <div wire:key="released-item-{{ $item->id }}" class="pt-2.5 first:pt-0">
                             <div class="bg-emerald-50/40 hover:bg-emerald-50/70 border border-emerald-200/80 rounded-xl p-3 transition-colors">
                                 <div class="flex items-start justify-between gap-2">
                                     <div>
@@ -192,7 +192,7 @@
                 <!-- Scrollable List -->
                 <div class="flex-1 overflow-y-auto space-y-2.5 pr-1 divide-y divide-slate-100">
                     @forelse($pendingList as $item)
-                        <div class="pt-2.5 first:pt-0">
+                        <div wire:key="pending-item-{{ $item->id }}" class="pt-2.5 first:pt-0">
                             <div class="bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl p-3 space-y-2 transition-all">
                                 <div class="flex items-start justify-between gap-2">
                                     <div>
@@ -205,6 +205,8 @@
                                 <!-- Action Buttons -->
                                 <div class="flex items-center justify-between gap-2 pt-1 border-t border-slate-200">
                                     <button 
+                                        type="button"
+                                        wire:key="btn-exclude-{{ $item->id }}"
                                         wire:click="moveToUnreleased({{ $item->id }})"
                                         wire:loading.attr="disabled"
                                         wire:target="moveToUnreleased({{ $item->id }})"
@@ -215,17 +217,19 @@
                                         <span wire:loading wire:target="moveToUnreleased({{ $item->id }})">Excluding...</span>
                                     </button>
                                     <button 
-                                        wire:click="releaseBeneficiary({{ $item->beneficiary_id }})"
+                                        type="button"
+                                        wire:key="btn-disburse-{{ $item->id }}"
+                                        wire:click="releaseBeneficiary({{ $item->id }})"
                                         wire:loading.attr="disabled"
-                                        wire:target="releaseBeneficiary({{ $item->beneficiary_id }})"
+                                        wire:target="releaseBeneficiary({{ $item->id }})"
                                         class="px-3 py-1 rounded-lg bg-brand hover:bg-emerald-700 text-white text-[11px] font-bold shadow-xs transition-all cursor-pointer flex items-center gap-1 disabled:opacity-75"
                                     >
-                                        <svg wire:loading wire:target="releaseBeneficiary({{ $item->beneficiary_id }})" class="animate-spin h-3 w-3 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
-                                        <span wire:loading.remove wire:target="releaseBeneficiary({{ $item->beneficiary_id }})" class="flex items-center gap-1">
+                                        <svg wire:loading wire:target="releaseBeneficiary({{ $item->id }})" class="animate-spin h-3 w-3 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+                                        <span wire:loading.remove wire:target="releaseBeneficiary({{ $item->id }})" class="flex items-center gap-1">
                                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
                                             <span>Disburse</span>
                                         </span>
-                                        <span wire:loading wire:target="releaseBeneficiary({{ $item->beneficiary_id }})">Disbursing...</span>
+                                        <span wire:loading wire:target="releaseBeneficiary({{ $item->id }})">Disbursing...</span>
                                     </button>
                                 </div>
                             </div>
@@ -293,7 +297,7 @@
                 <!-- Scrollable List -->
                 <div class="flex-1 overflow-y-auto space-y-2.5 pr-1 divide-y divide-slate-100">
                     @forelse($unreleasedList as $item)
-                        <div class="pt-2.5 first:pt-0">
+                        <div wire:key="unreleased-item-{{ $item->id }}" class="pt-2.5 first:pt-0">
                             <div class="bg-rose-50/40 hover:bg-rose-50/70 border border-rose-200 rounded-xl p-3 space-y-2 transition-colors">
                                 <div>
                                     <p class="font-bold text-neutral-strong text-xs">{{ $item->beneficiary?->full_name }}</p>
@@ -305,6 +309,8 @@
 
                                 <div class="flex justify-end pt-1 border-t border-rose-100">
                                     <button 
+                                        type="button"
+                                        wire:key="btn-restore-{{ $item->id }}"
                                         wire:click="moveToPending({{ $item->id }})"
                                         wire:loading.attr="disabled"
                                         wire:target="moveToPending({{ $item->id }})"
@@ -572,12 +578,14 @@
                 </div>
 
                 @forelse($pickerBeneficiaries as $ben)
-                    <div class="py-2.5 flex items-center justify-between gap-3">
+                    <div wire:key="picker-ben-{{ $ben->id }}" class="py-2.5 flex items-center justify-between gap-3">
                         <div>
                             <p class="font-bold text-neutral-strong">{{ $ben->full_name }}</p>
                             <p class="text-[10px] text-slate-500 font-mono">{{ $ben->civil_registry_id }} • HH: {{ $ben->household_no }} • Brgy. {{ $ben->barangay }}</p>
                         </div>
                         <button 
+                            type="button"
+                            wire:key="btn-enroll-ben-{{ $ben->id }}"
                             wire:click="enrollBeneficiary({{ $ben->id }})"
                             wire:loading.attr="disabled"
                             wire:target="enrollBeneficiary({{ $ben->id }})"

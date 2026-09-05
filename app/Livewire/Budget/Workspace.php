@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Budget;
 
+use App\Enums\BenefitType;
 use App\Enums\DistributionStatus;
 use App\Enums\FundingType;
 use App\Models\AyudaProgram;
@@ -44,6 +45,24 @@ class Workspace extends Component
     public bool $showRegistryInspector = false;
 
     public ?array $inspectingRecord = null;
+
+    // ==========================================
+    // AYUDA PROJECT DETAILS DRAWER STATE
+    // ==========================================
+    public bool $showProjectDetailsDrawer = false;
+
+    public ?int $selectedProjectDetailsId = null;
+
+    public string $projectDetailsTab = 'overview'; // 'overview', 'beneficiaries', 'claims'
+
+    // ==========================================
+    // FUNDING SOURCE DETAILS DRAWER STATE
+    // ==========================================
+    public bool $showFundingDetailsDrawer = false;
+
+    public ?int $selectedFundingDetailsId = null;
+
+    public string $fundingDetailsTab = 'overview'; // 'overview', 'projects', 'ledger'
 
     // ==========================================
     // IMMUTABLE LEDGER FILTER STATE
@@ -109,6 +128,8 @@ class Workspace extends Component
     public string $newProjectTargetCount = '50';
 
     public ?string $newProjectTargetBarangay = '';
+
+    public array $newProjectTargetBarangays = [];
 
     public string $newProjectStartDate = '';
 
@@ -282,6 +303,81 @@ class Workspace extends Component
         $this->inspectingRecord = null;
     }
 
+    public function openProjectDetails(int $id): void
+    {
+        $this->selectedProjectDetailsId = $id;
+        $this->projectDetailsTab = 'overview';
+        $this->showProjectDetailsDrawer = true;
+    }
+
+    public function closeProjectDetails(): void
+    {
+        $this->showProjectDetailsDrawer = false;
+        $this->selectedProjectDetailsId = null;
+        $this->projectDetailsTab = 'overview';
+    }
+
+    public function setProjectDetailsTab(string $tab): void
+    {
+        $this->projectDetailsTab = in_array($tab, ['overview', 'beneficiaries', 'claims'], true) ? $tab : 'overview';
+    }
+
+    public function openFundingDetails(int $id): void
+    {
+        $this->selectedFundingDetailsId = $id;
+        $this->fundingDetailsTab = 'overview';
+        $this->showFundingDetailsDrawer = true;
+    }
+
+    public function closeFundingDetails(): void
+    {
+        $this->showFundingDetailsDrawer = false;
+        $this->selectedFundingDetailsId = null;
+        $this->fundingDetailsTab = 'overview';
+    }
+
+    public function setFundingDetailsTab(string $tab): void
+    {
+        $this->fundingDetailsTab = in_array($tab, ['overview', 'projects', 'ledger'], true) ? $tab : 'overview';
+    }
+
+    public function toggleTargetBarangay(string $brgy): void
+    {
+        if (in_array($brgy, $this->newProjectTargetBarangays, true)) {
+            $this->newProjectTargetBarangays = array_values(array_diff($this->newProjectTargetBarangays, [$brgy]));
+        } else {
+            $this->newProjectTargetBarangays[] = $brgy;
+        }
+        $this->newProjectTargetBarangay = ! empty($this->newProjectTargetBarangays) ? implode(', ', $this->newProjectTargetBarangays) : '';
+    }
+
+    public function selectAllBarangays(): void
+    {
+        $cacheService = app(PerformanceCacheService::class);
+        $this->newProjectTargetBarangays = $cacheService->getBarangays();
+        $this->newProjectTargetBarangay = 'Municipality-Wide';
+    }
+
+    public function clearTargetBarangays(): void
+    {
+        $this->newProjectTargetBarangays = [];
+        $this->newProjectTargetBarangay = '';
+    }
+
+    public function toggleAllBarangays(): void
+    {
+        $cacheService = app(PerformanceCacheService::class);
+        $all = $cacheService->getBarangays();
+
+        if (count($this->newProjectTargetBarangays) === count($all)) {
+            $this->newProjectTargetBarangays = [];
+            $this->newProjectTargetBarangay = '';
+        } else {
+            $this->newProjectTargetBarangays = $all;
+            $this->newProjectTargetBarangay = 'Municipality-Wide';
+        }
+    }
+
     // ------------------------------------------
     // PRIVATE DONATION ACTIONS
     // ------------------------------------------
@@ -377,6 +473,27 @@ class Workspace extends Component
         return $qty * $count;
     }
 
+    #[Computed]
+    public function sourceAvailableGoodsStock(): ?int
+    {
+        $source = $this->selectedFundingSource;
+        if (! $source) {
+            return null;
+        }
+
+        $totalDonated = (int) $source->goodsDonations()->sum('quantity');
+        if ($totalDonated <= 0) {
+            return null;
+        }
+
+        $alreadyAllocated = (int) $source->ayudaPrograms()
+            ->where('benefit_type', BenefitType::Goods)
+            ->get()
+            ->sum(fn ($p) => (int) $p->target_beneficiaries * (int) ($p->item_quantity_per_beneficiary ?: 1));
+
+        return max(0, $totalDonated - $alreadyAllocated);
+    }
+
     public function getSelectedFundingSourceProperty(): ?FundingSource
     {
         return $this->selectedFundingSource;
@@ -392,6 +509,11 @@ class Workspace extends Component
         return $this->calculatedTotalGoodsQty;
     }
 
+    public function getSourceAvailableGoodsStockProperty(): ?int
+    {
+        return $this->sourceAvailableGoodsStock;
+    }
+
     public function updatedNewProjectBenefitType(string $val): void
     {
         if ($val === 'Goods') {
@@ -402,7 +524,7 @@ class Workspace extends Component
             }
             $source = $this->selectedFundingSource;
             $this->newProjectBudgetCap = (string) (float) ($source?->remaining_balance ?? 0);
-            $this->resetErrorBag('newProjectBudgetCap');
+            $this->validateBudgetCapRealtime();
         } else {
             $this->newProjectUnitAmount = '5000';
             $this->newProjectItemName = '';
@@ -430,6 +552,11 @@ class Workspace extends Component
 
     public function updatedNewProjectFundingSourceId(): void
     {
+        unset($this->selectedFundingSource, $this->sourceAvailableGoodsStock);
+        if ($this->newProjectBenefitType === 'Goods') {
+            $source = $this->selectedFundingSource;
+            $this->newProjectBudgetCap = (string) (float) ($source?->remaining_balance ?? 0);
+        }
         $this->validateBudgetCapRealtime();
     }
 
@@ -440,10 +567,28 @@ class Workspace extends Component
 
     public function updatedNewProjectUnitAmount(): void
     {
+        unset($this->calculatedTotalCost);
         $this->validateBudgetCapRealtime();
     }
 
     public function updatedNewProjectTargetCount(): void
+    {
+        unset($this->calculatedTotalCost, $this->calculatedTotalGoodsQty);
+        $this->validateBudgetCapRealtime();
+    }
+
+    public function updatedNewProjectItemQty(): void
+    {
+        unset($this->calculatedTotalGoodsQty);
+        $this->validateBudgetCapRealtime();
+    }
+
+    public function updatedNewProjectItemName(): void
+    {
+        $this->validateBudgetCapRealtime();
+    }
+
+    public function updatedNewProjectItemUnit(): void
     {
         $this->validateBudgetCapRealtime();
     }
@@ -462,31 +607,52 @@ class Workspace extends Component
 
     protected function validateBudgetCapRealtime(): void
     {
-        if ($this->newProjectBenefitType === 'Goods') {
-            $this->resetErrorBag('newProjectBudgetCap');
-
-            return;
-        }
-
-        if (! $this->newProjectFundingSourceId || $this->newProjectBudgetCap === '') {
-            return;
-        }
-
-        $source = $this->selectedFundingSource;
+        $source = $this->newProjectFundingSourceId ? FundingSource::find($this->newProjectFundingSourceId) : null;
         if (! $source) {
             return;
         }
 
-        $max = (float) $source->remaining_balance;
-        $entered = (float) $this->newProjectBudgetCap;
+        if ($this->newProjectBenefitType === 'Goods') {
+            $this->resetErrorBag(['newProjectBudgetCap', 'newProjectItemQty', 'newProjectTargetCount']);
 
-        if ($entered > $max) {
+            $totalDonated = (int) $source->goodsDonations()->sum('quantity');
+            if ($totalDonated > 0) {
+                $alreadyAllocated = (int) $source->ayudaPrograms()
+                    ->where('benefit_type', BenefitType::Goods)
+                    ->get()
+                    ->sum(fn ($p) => (int) $p->target_beneficiaries * (int) ($p->item_quantity_per_beneficiary ?: 1));
+                $availableStock = max(0, $totalDonated - $alreadyAllocated);
+
+                $qty = max(1, (int) ($this->newProjectItemQty ?: 1));
+                $count = max(0, (int) ($this->newProjectTargetCount ?: 0));
+                $totalRequired = $qty * $count;
+
+                if ($totalRequired > $availableStock) {
+                    $unit = $this->newProjectItemUnit ?: 'units';
+                    $this->addError(
+                        'newProjectTargetCount',
+                        "Required items ({$totalRequired} {$unit}) exceeds available stock in {$source->source_code} ({$availableStock} {$unit} remaining)."
+                    );
+                    $this->addError(
+                        'newProjectItemQty',
+                        "Total goods allocation exceeds available inventory stock of {$availableStock} {$unit}."
+                    );
+                }
+            }
+
+            return;
+        }
+
+        $this->resetErrorBag(['newProjectBudgetCap']);
+
+        $maxBalance = (float) $source->remaining_balance;
+        $entered = (float) ($this->newProjectBudgetCap ?: 0);
+
+        if ($this->newProjectBudgetCap !== '' && $entered > $maxBalance) {
             $this->addError(
                 'newProjectBudgetCap',
-                'Budget Cap (₱'.number_format($entered, 2).') exceeds the selected funding source available balance of ₱'.number_format($max, 2).'.'
+                'Budget Cap (₱'.number_format($entered, 2).') exceeds the selected funding source available balance of ₱'.number_format($maxBalance, 2).'.'
             );
-        } else {
-            $this->resetErrorBag('newProjectBudgetCap');
         }
     }
 
@@ -503,6 +669,7 @@ class Workspace extends Component
         $this->newProjectItemQty = '1';
         $this->newProjectTargetCount = '50';
         $this->newProjectTargetBarangay = '';
+        $this->newProjectTargetBarangays = [];
         $this->wizardStep = 1;
         $this->selectedBeneficiaries = [];
         $this->candidateSearch = '';
@@ -515,6 +682,25 @@ class Workspace extends Component
     {
         $this->showProjectModal = false;
         $this->showHouseholdModal = false;
+        $this->wizardStep = 1;
+        $this->selectedBeneficiaries = [];
+        $this->newProjectFundingSourceId = null;
+        $this->newProjectTitle = '';
+        $this->newProjectBenefitType = 'Cash';
+        $this->newProjectBudgetCap = '';
+        $this->newProjectUnitAmount = '5000';
+        $this->newProjectItemName = '';
+        $this->newProjectItemUnit = 'Sacks';
+        $this->newProjectItemQty = '1';
+        $this->newProjectTargetCount = '50';
+        $this->newProjectTargetBarangay = '';
+        $this->newProjectTargetBarangays = [];
+        $this->newProjectStartDate = '';
+        $this->newProjectEndDate = '';
+        $this->newProjectDescription = '';
+        $this->candidateSearch = '';
+        $this->candidateBarangay = '';
+        $this->reviewingCandidate = null;
         $this->resetErrorBag();
     }
 
@@ -552,6 +738,14 @@ class Workspace extends Component
                     'newProjectBudgetCap.max' => 'Budget Cap cannot exceed the remaining balance of the selected funding source (₱'.number_format($maxBalance, 2).').',
                 ]);
             }
+
+            $this->validateBudgetCapRealtime();
+            if ($this->getErrorBag()->isNotEmpty()) {
+                return;
+            }
+        }
+        if ($step === 4) {
+            $this->candidateBarangay = '';
         }
         $this->wizardStep = $step;
     }
@@ -591,11 +785,15 @@ class Workspace extends Component
                     'newProjectBudgetCap.max' => 'Budget Cap cannot exceed the remaining balance of the selected funding source (₱'.number_format($maxBalance, 2).').',
                 ]);
             }
+
+            $this->validateBudgetCapRealtime();
+            if ($this->getErrorBag()->isNotEmpty()) {
+                return;
+            }
+
             $this->wizardStep = 3;
         } elseif ($this->wizardStep === 3) {
-            if ($this->newProjectTargetBarangay && empty($this->candidateBarangay)) {
-                $this->candidateBarangay = $this->newProjectTargetBarangay;
-            }
+            $this->candidateBarangay = '';
             $this->wizardStep = 4;
         }
     }
@@ -714,7 +912,7 @@ class Workspace extends Component
             return;
         }
 
-        $key = $this->reviewingCandidate['civil_registry_id'];
+        $key = (string) ($this->reviewingCandidate['civil_registry_id'] ?? $this->reviewingCandidate['id']);
         $this->selectedBeneficiaries[$key] = $this->reviewingCandidate;
 
         $this->showHouseholdModal = false;
@@ -726,43 +924,294 @@ class Workspace extends Component
     public function autoFillCandidatePool(): void
     {
         $targetCount = max(1, (int) ($this->newProjectTargetCount ?: 50));
-        $query = Beneficiary::query();
-        $targetBrgy = $this->candidateBarangay ?: $this->newProjectTargetBarangay;
-        if ($targetBrgy) {
-            $query->where('address', 'like', "%{$targetBrgy}%");
-            if (empty($this->candidateBarangay)) {
-                $this->candidateBarangay = $targetBrgy;
-            }
-            if (empty($this->newProjectTargetBarangay)) {
-                $this->newProjectTargetBarangay = $targetBrgy;
-            }
+        $alreadySelectedCount = count($this->selectedBeneficiaries);
+        $needed = max(0, $targetCount - $alreadySelectedCount);
+
+        if ($needed <= 0) {
+            $this->dispatch('toast', type: 'info', message: "Target capacity of {$targetCount} beneficiaries has already been reached.");
+
+            return;
         }
 
-        $candidates = $query->take($targetCount)->get();
+        $barangays = ! empty($this->newProjectTargetBarangays)
+            ? $this->newProjectTargetBarangays
+            : ($this->newProjectTargetBarangay && $this->newProjectTargetBarangay !== 'Municipality-Wide'
+                ? array_map('trim', explode(',', $this->newProjectTargetBarangay))
+                : []);
+
+        $roster = $this->resolveIntelligentBeneficiaryRoster(
+            selectedBarangays: $barangays,
+            targetTotal: $targetCount,
+            currentSelected: $this->selectedBeneficiaries
+        );
+
         $added = 0;
-        foreach ($candidates as $c) {
-            $crn = $c->civil_registry_id ?: $c->civilregistry_id ?: $c->beneficiary_id ?: "CRN-{$c->id}";
-            $this->selectedBeneficiaries[$crn] = [
-                'id' => $c->id,
-                'civil_registry_id' => $crn,
-                'beneficiary_id' => $c->beneficiary_id ?: "BEN-{$c->id}",
-                'full_name' => $c->full_name ?: trim("{$c->first_name} {$c->last_name}"),
-                'household_no' => $c->household_no ?? 'N/A',
-                'barangay' => $c->barangay ?: ($c->address ?? 'Sulop'),
-                'address' => $c->address,
-                'sex' => $c->gender ?? $c->sex ?? 'N/A',
-                'birth_date' => $c->birthDate ?? $c->date_of_birth ?? 'N/A',
-            ];
+        foreach ($roster['added'] as $crn => $candidateData) {
+            $this->selectedBeneficiaries[$crn] = $candidateData;
             $added++;
         }
 
-        $this->dispatch('play-audio-success');
-        $this->dispatch('toast', type: 'info', message: "Enlisted {$added} candidate citizen(s) into project roster.");
+        if ($added > 0) {
+            $this->dispatch('play-audio-success');
+            $brgyCount = count($roster['effective_barangays']);
+            if ($added < $needed) {
+                $this->dispatch(
+                    'toast',
+                    type: 'warning',
+                    message: "Auto-filled {$added} citizen(s) across {$brgyCount} barangay(s). Only {$added} eligible unique household(s) were available (target: {$targetCount})."
+                );
+            } else {
+                $this->dispatch(
+                    'toast',
+                    type: 'info',
+                    message: "Auto-filled {$added} citizen(s) across {$brgyCount} barangay(s) with 1 beneficiary per unique household."
+                );
+            }
+        } else {
+            $this->dispatch('play-audio-error');
+            $this->dispatch(
+                'toast',
+                type: 'warning',
+                message: 'No additional eligible unique households found in the selected barangay(s).'
+            );
+        }
     }
 
-    public function removeCandidate(string $key): void
+    /**
+     * Intelligent Randomized Beneficiary Auto-Fill Engine
+     *
+     * @param  array<int, string>  $selectedBarangays
+     * @param  array<string, array>  $currentSelected
+     * @return array{
+     *     added: array<string, array>,
+     *     total_added: int,
+     *     needed: int,
+     *     target_total: int,
+     *     effective_barangays: array<int, string>,
+     *     quotas: array<string, int>
+     * }
+     */
+    protected function resolveIntelligentBeneficiaryRoster(
+        array $selectedBarangays,
+        int $targetTotal,
+        array $currentSelected = []
+    ): array {
+        $alreadySelectedCount = count($currentSelected);
+        $neededCount = max(0, $targetTotal - $alreadySelectedCount);
+
+        if ($neededCount <= 0) {
+            return [
+                'added' => [],
+                'total_added' => 0,
+                'needed' => 0,
+                'target_total' => $targetTotal,
+                'effective_barangays' => $selectedBarangays,
+                'quotas' => [],
+            ];
+        }
+
+        $allBarangays = app(PerformanceCacheService::class)->getBarangays();
+        $effectiveBarangays = ! empty($selectedBarangays)
+            ? array_values(array_unique($selectedBarangays))
+            : $allBarangays;
+
+        if (empty($effectiveBarangays)) {
+            $effectiveBarangays = $allBarangays;
+        }
+
+        // Collect existing selected households and beneficiary IDs to strictly exclude
+        $existingHouseholdKeys = [];
+        $existingBenIds = [];
+
+        foreach ($currentSelected as $b) {
+            if (! empty($b['id'])) {
+                $existingBenIds[(string) $b['id']] = true;
+            }
+            if (! empty($b['civil_registry_id'])) {
+                $existingBenIds[(string) $b['civil_registry_id']] = true;
+            }
+            $hNo = $b['household_no'] ?? null;
+            if ($hNo && $hNo !== 'N/A') {
+                $existingHouseholdKeys["H-{$hNo}"] = true;
+            }
+        }
+
+        // 1. Fetch eligible candidates per barangay
+        $barangayPools = [];
+        $isLargeSelection = count($effectiveBarangays) >= 10;
+
+        if ($isLargeSelection) {
+            $fetchLimit = max(600, $neededCount * 4);
+            $query = Beneficiary::query();
+            if (count($effectiveBarangays) < count($allBarangays)) {
+                $query->where(function ($q) use ($effectiveBarangays) {
+                    foreach ($effectiveBarangays as $i => $b) {
+                        if ($i === 0) {
+                            $q->where('address', 'like', "%{$b}%");
+                        } else {
+                            $q->orWhere('address', 'like', "%{$b}%");
+                        }
+                    }
+                });
+            }
+            $rawPool = $query->inRandomOrder()->take($fetchLimit)->get();
+
+            foreach ($rawPool as $candidate) {
+                $brgy = $candidate->barangay;
+                if (! in_array($brgy, $effectiveBarangays, true)) {
+                    foreach ($effectiveBarangays as $targetBrgy) {
+                        if (str_contains($candidate->address, $targetBrgy)) {
+                            $brgy = $targetBrgy;
+                            break;
+                        }
+                    }
+                }
+                if (in_array($brgy, $effectiveBarangays, true)) {
+                    $barangayPools[$brgy][] = $candidate;
+                }
+            }
+        } else {
+            $fetchPerBrgy = max(60, (int) ceil(($neededCount / max(1, count($effectiveBarangays))) * 3));
+            foreach ($effectiveBarangays as $brgy) {
+                $rawPool = Beneficiary::where('address', 'like', "%{$brgy}%")
+                    ->inRandomOrder()
+                    ->take($fetchPerBrgy)
+                    ->get();
+                $barangayPools[$brgy] = $rawPool->all();
+            }
+        }
+
+        // 2. Group candidates by household within each barangay and pick 1 random member
+        $availableByBarangay = [];
+        foreach ($effectiveBarangays as $brgy) {
+            $candidates = $barangayPools[$brgy] ?? [];
+            $byHousehold = [];
+
+            foreach ($candidates as $c) {
+                $cId = (string) $c->id;
+                $crn = (string) ($c->civil_registry_id ?: $c->civilregistry_id ?: $c->beneficiary_id ?: "CRN-{$c->id}");
+
+                if (isset($existingBenIds[$cId]) || isset($existingBenIds[$crn])) {
+                    continue;
+                }
+
+                $hNo = $c->household_no;
+                if ($hNo && $hNo !== 'N/A' && isset($existingHouseholdKeys["H-{$hNo}"])) {
+                    continue;
+                }
+
+                $hKey = ($hNo && $hNo !== 'N/A') ? "H-{$hNo}" : "IND-{$c->id}";
+                $byHousehold[$hKey][] = $c;
+            }
+
+            $uniqueHouseholds = [];
+            foreach ($byHousehold as $hKey => $members) {
+                $chosen = $members[array_rand($members)];
+                $uniqueHouseholds[] = [
+                    'candidate' => $chosen,
+                    'household_key' => $hKey,
+                ];
+            }
+
+            shuffle($uniqueHouseholds);
+            $availableByBarangay[$brgy] = $uniqueHouseholds;
+        }
+
+        // 3. Fair water-filling quota allocation across selected barangays
+        $allocatedQuotas = array_fill_keys($effectiveBarangays, 0);
+        $availableCounts = array_map(fn ($list) => count($list), $availableByBarangay);
+
+        $remainingNeeded = $neededCount;
+        $activeBarangays = $effectiveBarangays;
+
+        while ($remainingNeeded > 0 && ! empty($activeBarangays)) {
+            $share = (int) ceil($remainingNeeded / count($activeBarangays));
+            $progress = false;
+
+            foreach ($activeBarangays as $idx => $brgy) {
+                $canGive = $availableCounts[$brgy] - $allocatedQuotas[$brgy];
+                if ($canGive <= 0) {
+                    unset($activeBarangays[$idx]);
+
+                    continue;
+                }
+
+                $take = min($canGive, min($share, $remainingNeeded));
+                if ($take > 0) {
+                    $allocatedQuotas[$brgy] += $take;
+                    $remainingNeeded -= $take;
+                    $progress = true;
+                }
+
+                if ($allocatedQuotas[$brgy] >= $availableCounts[$brgy]) {
+                    unset($activeBarangays[$idx]);
+                }
+
+                if ($remainingNeeded <= 0) {
+                    break;
+                }
+            }
+
+            if (! $progress) {
+                break;
+            }
+        }
+
+        // 4. Assemble final roster with strict household uniqueness check
+        $addedCandidates = [];
+        $stagedHouseholdKeys = $existingHouseholdKeys;
+
+        foreach ($effectiveBarangays as $brgy) {
+            $quota = $allocatedQuotas[$brgy];
+            $candidates = array_slice($availableByBarangay[$brgy], 0, $quota);
+
+            foreach ($candidates as $item) {
+                $c = $item['candidate'];
+                $hKey = $item['household_key'];
+
+                if (isset($stagedHouseholdKeys[$hKey])) {
+                    continue;
+                }
+                $stagedHouseholdKeys[$hKey] = true;
+
+                $crn = $c->civil_registry_id ?: $c->civilregistry_id ?: $c->beneficiary_id ?: "CRN-{$c->id}";
+                $addedCandidates[$crn] = [
+                    'id' => $c->id,
+                    'civil_registry_id' => $crn,
+                    'beneficiary_id' => $c->beneficiary_id ?: "BEN-{$c->id}",
+                    'full_name' => $c->full_name ?: trim("{$c->first_name} {$c->last_name}"),
+                    'household_no' => $c->household_no ?? 'N/A',
+                    'barangay' => $brgy,
+                    'address' => $c->address,
+                    'sex' => $c->gender ?? $c->sex ?? 'N/A',
+                    'birth_date' => $c->birthDate ?? $c->date_of_birth ?? 'N/A',
+                ];
+            }
+        }
+
+        return [
+            'added' => $addedCandidates,
+            'total_added' => count($addedCandidates),
+            'needed' => $neededCount,
+            'target_total' => $targetTotal,
+            'effective_barangays' => $effectiveBarangays,
+            'quotas' => $allocatedQuotas,
+        ];
+    }
+
+    public function removeCandidate(int|string $key): void
     {
-        unset($this->selectedBeneficiaries[$key]);
+        unset($this->selectedBeneficiaries[(string) $key]);
+        unset($this->selectedBeneficiaries[(int) $key]);
+
+        foreach ($this->selectedBeneficiaries as $k => $item) {
+            if ((isset($item['id']) && (string) $item['id'] === (string) $key) ||
+                (isset($item['civil_registry_id']) && (string) $item['civil_registry_id'] === (string) $key)
+            ) {
+                unset($this->selectedBeneficiaries[$k]);
+                break;
+            }
+        }
     }
 
     public function clearAllCandidates(): void
@@ -779,6 +1228,14 @@ class Workspace extends Component
         $source = FundingSource::findOrFail($this->newProjectFundingSourceId);
         $maxBalance = (float) $source->remaining_balance;
 
+        $this->validateBudgetCapRealtime();
+        if ($this->getErrorBag()->isNotEmpty()) {
+            $this->dispatch('play-audio-error');
+            $this->dispatch('toast', type: 'error', message: 'Cannot create project: Allocation limits or available stock exceeded.');
+
+            return;
+        }
+
         if ($this->newProjectBenefitType === 'Goods') {
             $this->validate([
                 'newProjectFundingSourceId' => 'required|exists:funding_sources,id',
@@ -788,9 +1245,7 @@ class Workspace extends Component
                 'newProjectItemUnit' => 'required|string|min:1',
                 'newProjectItemQty' => 'required|integer|min:1',
             ]);
-            if (empty($this->newProjectBudgetCap)) {
-                $this->newProjectBudgetCap = (string) (float) $maxBalance;
-            }
+            $this->newProjectBudgetCap = (string) min((float) ($this->newProjectBudgetCap ?: 0), $maxBalance);
         } else {
             $this->validate([
                 'newProjectFundingSourceId' => 'required|exists:funding_sources,id',
@@ -807,7 +1262,9 @@ class Workspace extends Component
             $enrolledCount = 0;
 
             DB::transaction(function () use ($budgetService, &$program, &$enrolledCount) {
-                $effectiveTargetBarangay = $this->newProjectTargetBarangay ?: ($this->candidateBarangay ?: null);
+                $effectiveTargetBarangay = ! empty($this->newProjectTargetBarangays)
+                    ? implode(', ', $this->newProjectTargetBarangays)
+                    : ($this->newProjectTargetBarangay ?: ($this->candidateBarangay ?: 'Municipality-Wide'));
 
                 $program = $budgetService->createAyudaProgram([
                     'funding_source_id' => $this->newProjectFundingSourceId,
@@ -843,24 +1300,29 @@ class Workspace extends Component
                         $enrolledCount++;
                     }
                 } else {
-                    // 2. Auto-enroll eligible citizens matching target count & target scope
-                    $query = Beneficiary::query();
-                    if ($effectiveTargetBarangay) {
-                        $query->where('address', 'like', "%{$effectiveTargetBarangay}%");
-                    }
-                    $limit = max(1, (int) ($this->newProjectTargetCount ?: 50));
-                    $autoBeneficiaries = $query->take($limit)->get();
+                    // 2. Intelligent Auto-enroll eligible citizens matching target count & target scope
+                    $targetLimit = max(1, (int) ($this->newProjectTargetCount ?: 50));
+                    $targetBarangays = ! empty($this->newProjectTargetBarangays)
+                        ? $this->newProjectTargetBarangays
+                        : ($this->newProjectTargetBarangay && $this->newProjectTargetBarangay !== 'Municipality-Wide'
+                            ? array_map('trim', explode(',', $this->newProjectTargetBarangay))
+                            : []);
 
-                    foreach ($autoBeneficiaries as $b) {
-                        $crn = $b->civil_registry_id ?: $b->civilregistry_id ?: $b->beneficiary_id ?: "CRN-{$b->id}";
+                    $roster = $this->resolveIntelligentBeneficiaryRoster(
+                        selectedBarangays: $targetBarangays,
+                        targetTotal: $targetLimit,
+                        currentSelected: []
+                    );
+
+                    foreach ($roster['added'] as $b) {
                         DistributionEnrollment::firstOrCreate(
                             [
                                 'ayuda_program_id' => $program->id,
-                                'civil_registry_id' => $crn,
+                                'civil_registry_id' => $b['civil_registry_id'],
                             ],
                             [
-                                'beneficiary_id' => $b->id,
-                                'household_no' => $b->household_no ?? 'N/A',
+                                'beneficiary_id' => $b['id'] ?? null,
+                                'household_no' => $b['household_no'] ?? 'N/A',
                                 'status' => DistributionStatus::PENDING,
                                 'enrolled_at' => now(),
                             ]
@@ -872,13 +1334,7 @@ class Workspace extends Component
 
             app(PerformanceCacheService::class)->clearFundingCache();
 
-            $this->showProjectModal = false;
-            $this->wizardStep = 1;
-            $this->selectedBeneficiaries = [];
-            $this->newProjectTitle = '';
-            $this->newProjectBudgetCap = '';
-            $this->newProjectTargetBarangay = '';
-            $this->candidateBarangay = '';
+            $this->closeProjectModal();
             $this->activeTab = 'overview';
             $this->dispatch('play-audio-success');
             $this->dispatch('toast', type: 'success', message: "Created Ayuda Project {$program->program_code} with {$enrolledCount} enrolled beneficiaries.");
@@ -1097,6 +1553,16 @@ class Workspace extends Component
                 }
                 if ($this->candidateBarangay) {
                     $candidateQ->where('address', 'like', "%{$this->candidateBarangay}%");
+                } elseif (! empty($this->newProjectTargetBarangays)) {
+                    $candidateQ->where(function ($q) {
+                        foreach ($this->newProjectTargetBarangays as $index => $brgy) {
+                            if ($index === 0) {
+                                $q->where('address', 'like', "%{$brgy}%");
+                            } else {
+                                $q->orWhere('address', 'like', "%{$brgy}%");
+                            }
+                        }
+                    });
                 }
 
                 $totalCandidatesCount = $candidateQ->count();
@@ -1105,6 +1571,29 @@ class Workspace extends Component
                 $candidates = collect();
                 $totalCandidatesCount = 0;
             }
+        }
+
+        // 8. Detailed Project for Inspector Drawer
+        $detailedProject = null;
+        if ($this->showProjectDetailsDrawer && $this->selectedProjectDetailsId) {
+            $detailedProject = AyudaProgram::with([
+                'fundingSource',
+                'creator',
+                'enrollments.beneficiary',
+                'claims.beneficiary',
+                'claims.releasingOfficer',
+            ])->find($this->selectedProjectDetailsId);
+        }
+
+        // 9. Detailed Funding Source for Inspector Drawer
+        $detailedFunding = null;
+        if ($this->showFundingDetailsDrawer && $this->selectedFundingDetailsId) {
+            $detailedFunding = FundingSource::with([
+                'ayudaPrograms.claims',
+                'donations',
+                'goodsDonations',
+                'budgetLedgerEntries.creator',
+            ])->find($this->selectedFundingDetailsId);
         }
 
         return view('livewire.budget.workspace', [
@@ -1125,6 +1614,8 @@ class Workspace extends Component
             'barangays' => $barangays,
             'candidates' => $candidates,
             'totalCandidatesCount' => $totalCandidatesCount,
+            'detailedProject' => $detailedProject,
+            'detailedFunding' => $detailedFunding,
         ]);
     }
 }

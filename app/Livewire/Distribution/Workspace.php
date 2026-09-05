@@ -158,10 +158,28 @@ class Workspace extends Component
     /**
      * Direct Release Action (via button click or scanner confirmation).
      */
-    public function releaseBeneficiary(int $beneficiaryId, DistributionReleaseService $releaseService, HouseholdVerificationService $householdService): void
+    public function releaseBeneficiary(int $id, DistributionReleaseService $releaseService, HouseholdVerificationService $householdService): void
     {
         $program = AyudaProgram::findOrFail($this->selectedProjectId);
-        $beneficiary = Beneficiary::findOrFail($beneficiaryId);
+
+        // Resolve by DistributionEnrollment ID first, or fallback to Beneficiary ID
+        $enrollment = DistributionEnrollment::find($id);
+        if ($enrollment) {
+            $beneficiary = $enrollment->beneficiary ?? Beneficiary::find($enrollment->beneficiary_id);
+            if (! $beneficiary && $enrollment->civil_registry_id) {
+                $beneficiary = Beneficiary::where('civil_registry_id', $enrollment->civil_registry_id)
+                    ->orWhere('civilregistry_id', $enrollment->civil_registry_id)
+                    ->first();
+            }
+        } else {
+            $beneficiary = Beneficiary::find($id);
+        }
+
+        if (! $beneficiary) {
+            $this->dispatch('toast', type: 'error', message: 'Beneficiary record could not be resolved.');
+
+            return;
+        }
 
         // Check household duplicate protection
         $hhCheck = $householdService->checkHouseholdStatus($beneficiary, $program);
